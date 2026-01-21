@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vision System | Camera Management</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i data-lucide="eye"></i>
+                </div>
+                <span class="logo-text">VISION<span>SYSTEM</span></span>
+            </div>
+
+            <nav class="nav-links">
+                <a href="#" class="nav-item active" data-tab="cameras">
+                    <i data-lucide="camera"></i>
+                    <span>Camera List</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="dashboard">
+                    <i data-lucide="aperture"></i>
+                    <span>Lens FA List</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="live">
+                    <i data-lucide="focus"></i>
+                    <span>Lens Tele List</span>
+                </a>
+                <a href="#" class="nav-item nav-disabled" data-tab="analytics" id="nav-calc">
+                    <i data-lucide="calculator"></i>
+                    <span>Calculation Vision</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="settings">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="system-status">
+                <div class="status-header">SYSTEM HEALTH</div>
+                <div class="status-bar-container">
+                    <div class="status-label">CPU Usage</div>
+                    <div class="status-bar">
+                        <div class="progress" style="width: 42%;"></div>
+                    </div>
+                </div>
+                <div class="status-bar-container">
+                    <div class="status-label">Memory</div>
+                    <div class="status-bar">
+                        <div class="progress" style="width: 68%;"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="mobile-toggle" id="mobile-sidebar-toggle">
+                    <i data-lucide="menu"></i>
+                </div>
+                <div class="search-container">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Search cameras...">
+                </div>
+                <div class="user-profile">
+                    <div class="notifications">
+                        <i data-lucide="bell"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="user-info" id="user-login-trigger" style="cursor: pointer;">
+                        <span class="user-name" id="display-user-name">Login</span>
+                        <span class="user-role" id="display-user-role">Click to sign in</span>
+                    </div>
+                    <div class="avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Vision" alt="Avatar">
+                    </div>
+                    <button id="logout-btn" class="logout-btn" style="display: none;" title="Logout">
+                        <i data-lucide="log-out"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tab Content Area -->
+            <div class="tab-content-area">
+
+                <!-- Lens FA List Tab -->
+                <section id="tab-dashboard" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="aperture"></i> Lens FA List</h1>
+                        <p>Fixed Aperture Lens catalog from Hikrobotics</p>
+                    </div>
+
+                    <!-- Lens Table -->
+                    <div class="table-container glass-panel">
+                        <table class="data-table" id="lens-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No.</th>
+                                    <th>Product Model</th>
+                                    <th>Focal Length</th>
+                                    <th>Image Size</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lens-tbody">
+                                <!-- Data will be injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <span class="table-info">Showing <strong id="lens-showing-count">0</strong> of <strong
+                                id="lens-total-count">0</strong> lenses</span>
+                    </div>
+                </section>
+
+                <!-- Camera List Tab -->
+                <section id="tab-cameras" class="tab-panel active">
+                    <div class="page-header">
+                        <h1><i data-lucide="camera"></i> Camera Products</h1>
+                        <p>Manage and view all camera models in the system</p>
+                    </div>
+
+                    <!-- Tab Control for Camera Categories -->
+                    <div class="inner-tabs">
+                        <button class="inner-tab-btn active" data-category="hik">HIK</button>
+                        <button class="inner-tab-btn" data-category="basler">Basler</button>
+                        <button class="inner-tab-btn" data-category="cognex">Cognex</button>
+                    </div>
+
+                    <!-- Camera Table -->
+                    <div class="table-container glass-panel">
+                        <table class="data-table" id="camera-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No.</th>
+                                    <th>Product Model</th>
+                                    <th>Resolution</th>
+                                    <th>Sensor Size</th>
+                                    <th>W × H (mm)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="camera-tbody">
+                                <!-- Data will be injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <span class="table-info">Showing <strong id="showing-count">12</strong> of <strong
+                                id="total-count">12</strong> cameras</span>
+                        <div class="pagination" id="pagination-container">
+                            <!-- Pagination buttons will be injected by JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Lens Tele List Tab -->
+                <section id="tab-live" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="focus"></i> Lens Tele List</h1>
+                        <p>Telecentric Lens catalog from Computar</p>
+                    </div>
+
+                    <!-- Tele Lens Table -->
+                    <div class="table-container glass-panel">
+                        <table class="data-table" id="tele-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No.</th>
+                                    <th>Model Name</th>
+                                    <th>Sensor Size</th>
+                                    <th>Working Distance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tele-tbody">
+                                <!-- Data will be injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <span class="table-info">Showing <strong id="tele-showing-count">0</strong> of <strong
+                                id="tele-total-count">0</strong> lenses</span>
+                    </div>
+                </section>
+
+                <!-- Calculation Vision Tab -->
+                <section id="tab-analytics" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="calculator"></i> Calculation Vision</h1>
+                        <p>Calculate Field of View (FOV) based on lens and camera parameters</p>
+                    </div>
+
+                    <!-- FA Lens Calculator -->
+                    <div class="calculator-container glass-panel" style="margin-bottom: 2.5rem;">
+                        <h2
+                            style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--accent);">
+                            <i data-lucide="aperture"></i> FA Lens Calculator
+                        </h2>
+                        <div class="calc-grid">
+                            <!-- Lens Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="aperture"></i> Lens Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="calc-lens-type">Lens Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="calc-lens-type" class="calc-input search-select-input"
+                                            placeholder="-- Search Lens --" autocomplete="off">
+                                        <div class="search-select-results" id="calc-lens-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-focal-length">Focal Length</label>
+                                    <input type="text" id="calc-focal-length" class="calc-input" readonly
+                                        placeholder="Auto from lens">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-image-size">Image Size</label>
+                                    <input type="text" id="calc-image-size" class="calc-input" readonly
+                                        placeholder="Auto from lens">
+                                </div>
+                                <div class="calc-row-flex">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="use-adapter-ring">
+                                        <label for="use-adapter-ring">Adapter Ring</label>
+                                    </div>
+                                    <div class="input-group-sub" id="ring-length-container" style="display: none;">
+                                        <label for="calc-ring-length">Length (mm)</label>
+                                        <input type="number" id="calc-ring-length" class="calc-input-small" value="5"
+                                            step="0.5" min="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Camera Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="calc-camera-type">Camera Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="calc-camera-type" class="calc-input search-select-input"
+                                            placeholder="-- Search Camera --" autocomplete="off">
+                                        <div class="search-select-results" id="calc-camera-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-sensor-size">Sensor Size (W×H)</label>
+                                    <input type="text" id="calc-sensor-size" class="calc-input" readonly
+                                        placeholder="Auto from camera">
+                                </div>
+                            </div>
+
+                            <!-- FOV Calculation -->
+                            <div class="calc-section calc-results">
+                                <h3><i data-lucide="scan"></i> FOV Calculation</h3>
+                                <div class="calc-row">
+                                    <label for="calc-fov-width">FOV Width (mm)</label>
+                                    <input type="number" id="calc-fov-width" class="calc-input"
+                                        placeholder="Enter or Result">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-fov-height">FOV Height (mm)</label>
+                                    <input type="text" id="calc-fov-height" class="calc-input result" readonly
+                                        placeholder="Auto calculated">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-working-distance">Working Distance (mm)</label>
+                                    <input type="number" id="calc-working-distance" class="calc-input"
+                                        placeholder="Enter or Result">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-pixel-size">Pixel Size (mm/px)</label>
+                                    <input type="text" id="calc-pixel-size" class="calc-input result" readonly
+                                        placeholder="Auto calculated">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-vision-error">Vision Accuracy (mm)</label>
+                                    <input type="text" id="calc-vision-error" class="calc-input result" readonly
+                                        placeholder="Auto calculated">
+                                </div>
+                                <div class="calc-btn-group">
+                                    <button id="calc-fov-btn" class="calc-btn">
+                                        <i data-lucide="arrow-right"></i> WD → FOV
+                                    </button>
+                                    <button id="calc-wd-btn" class="calc-btn calc-btn-alt">
+                                        <i data-lucide="arrow-left"></i> FOV → WD
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Telecentric Lens Calculator -->
+                    <div class="calculator-container glass-panel">
+                        <h2
+                            style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--purple);">
+                            <i data-lucide="focus"></i> Telecentric Lens Calculator
+                        </h2>
+                        <div class="calc-grid">
+                            <!-- Lens Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="focus"></i> Tele Lens Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="tele-calc-lens-type">Lens Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="tele-calc-lens-type"
+                                            class="calc-input search-select-input" placeholder="-- Search Tele Lens --"
+                                            autocomplete="off">
+                                        <div class="search-select-results" id="tele-calc-lens-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-magnification">Magnification (β)</label>
+                                    <input type="text" id="tele-calc-magnification" class="calc-input"
+                                        placeholder="e.g. 1.0">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-wd-range">Working Distance</label>
+                                    <input type="text" id="tele-calc-wd-range" class="calc-input" readonly
+                                        placeholder="Auto from lens">
+                                </div>
+                            </div>
+
+                            <!-- Camera Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="tele-calc-camera-type">Camera Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="tele-calc-camera-type"
+                                            class="calc-input search-select-input" placeholder="-- Search Camera --"
+                                            autocomplete="off">
+                                        <div class="search-select-results" id="tele-calc-camera-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-sensor-size">Sensor Size (W×H)</label>
+                                    <input type="text" id="tele-calc-sensor-size" class="calc-input" readonly
+                                        placeholder="Auto from camera">
+                                </div>
+                            </div>
+
+                            <!-- FOV Calculation -->
+                            <div class="calc-section calc-results"
+                                style="background: rgba(139, 92, 246, 0.05); border-color: rgba(139, 92, 246, 0.2);">
+                                <h3><i data-lucide="scan"></i> FOV Calculation</h3>
+                                <div class="calc-row">
+                                    <label>Calculation Mode</label>
+                                    <div
+                                        style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                        FOV = Sensor Size / Magnification
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-fov-width">FOV Width (mm)</label>
+                                    <input type="text" id="tele-calc-fov-width" class="calc-input result" readonly
+                                        placeholder="Result"
+                                        style="color: var(--purple); border-color: var(--purple); background: rgba(139, 92, 246, 0.1);">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-fov-height">FOV Height (mm)</label>
+                                    <input type="text" id="tele-calc-fov-height" class="calc-input result" readonly
+                                        placeholder="Result"
+                                        style="color: var(--purple); border-color: var(--purple); background: rgba(139, 92, 246, 0.1);">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-pixel-size">Pixel Size (mm/px)</label>
+                                    <input type="text" id="tele-calc-pixel-size" class="calc-input result" readonly
+                                        placeholder="Result"
+                                        style="color: var(--purple); border-color: var(--purple); background: rgba(139, 92, 246, 0.1);">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-vision-error">Vision Accuracy (mm)</label>
+                                    <input type="text" id="tele-calc-vision-error" class="calc-input result" readonly
+                                        placeholder="Result"
+                                        style="color: var(--purple); border-color: var(--purple); background: rgba(139, 92, 246, 0.1);">
+                                </div>
+                                <button id="tele-calc-fov-btn" class="calc-btn"
+                                    style="background: linear-gradient(135deg, var(--purple), var(--blue));">
+                                    <i data-lucide="calculator"></i> Calculate FOV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Tab -->
+                <section id="tab-settings" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="settings"></i> Settings</h1>
+                        <p>System configuration and preferences</p>
+                    </div>
+                    <div class="coming-soon">
+                        <i data-lucide="construction"></i>
+                        <span>Settings Module Coming Soon</span>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="login-modal">
+        <div class="login-card glass-panel">
+            <div class="login-header">
+                <i data-lucide="lock"></i>
+                <h2>Security Login</h2>
+                <p>Authorized personnel only</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>User ID</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="login-id" placeholder="Enter ID" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="key"></i>
+                        <input type="password" id="login-pass" placeholder="Enter Password" required>
+                    </div>
+                </div>
+                <div id="login-error" class="login-error-msg"></div>
+                <button type="submit" class="login-submit-btn">
+                    <span>Sign In</span>
+                    <i data-lucide="log-in"></i>
+                </button>
+            </form>
+            <button class="modal-close" id="close-login-btn">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
