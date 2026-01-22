@@ -1535,3 +1535,271 @@ input[type="checkbox"] {
         padding-right: env(safe-area-inset-right);
     }
 }
+
+/* ===== VISION LAB MOBILE OPTIMIZATION (iPhone 16 Pro Max) ===== */
+@media (max-width: 480px) {
+
+    /* Vision Lab - Lighting Simulation */
+    .light-sim-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+        min-height: calc(100vh - 180px);
+        gap: 1rem;
+    }
+
+    .light-controls {
+        padding: 1rem;
+        gap: 1rem;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .control-group h3 {
+        font-size: 0.85rem;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Upload Area - Side by side, smaller */
+    .upload-options {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    .upload-area {
+        padding: 1rem 0.5rem;
+    }
+
+    .upload-area i {
+        width: 24px;
+        height: 24px;
+    }
+
+    .upload-area span {
+        font-size: 0.7rem;
+    }
+
+    .camera-btn {
+        padding: 1rem 0.5rem;
+    }
+
+    .camera-btn i {
+        width: 24px;
+        height: 24px;
+    }
+
+    .camera-btn span {
+        font-size: 0.7rem;
+    }
+
+    /* Light Modes Grid - 4 columns on mobile */
+    .light-modes-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.4rem;
+    }
+
+    .light-mode-btn {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.6rem;
+        border-radius: 6px;
+    }
+
+    /* Sliders */
+    .slider-row {
+        margin-bottom: 0.75rem;
+    }
+
+    .slider-row label {
+        font-size: 0.7rem;
+    }
+
+    /* Usage Tip */
+    .usage-tip-panel {
+        padding: 0.75rem;
+        font-size: 0.7rem;
+        margin-top: 0.75rem;
+    }
+
+    .tip-label {
+        font-size: 0.6rem;
+    }
+
+    /* Preview Pane */
+    .light-preview-pane {
+        padding: 1rem;
+        min-height: 300px;
+    }
+
+    #light-sim-image {
+        max-height: 50vh;
+    }
+
+    .no-image-placeholder i {
+        width: 40px;
+        height: 40px;
+    }
+
+    .no-image-placeholder p {
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    /* Vision Lab - Image Converter */
+    .converter-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+        min-height: calc(100vh - 180px);
+        gap: 1rem;
+    }
+
+    .converter-controls {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .converter-previews {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        height: auto;
+    }
+
+    .preview-card {
+        min-height: 200px;
+    }
+
+    .preview-header {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.65rem;
+    }
+
+    .preview-canvas-container {
+        min-height: 180px;
+    }
+
+    .canvas-placeholder i {
+        width: 32px;
+        height: 32px;
+    }
+
+    .canvas-placeholder p {
+        font-size: 0.75rem;
+    }
+
+    /* Inner Tabs - scrollable on small screens */
+    .inner-tabs {
+        display: flex;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem !important;
+    }
+
+    .inner-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .inner-tab-btn {
+        flex-shrink: 0;
+        padding: 0.6rem 1rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+
+    /* Calc button adjustments */
+    .calc-btn {
+        padding: 0.85rem;
+        font-size: 0.85rem;
+    }
+
+    /* Page Header adjustments */
+    .page-header {
+        margin-bottom: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.1rem;
+    }
+
+    .page-header p {
+        font-size: 0.75rem;
+    }
+}
+
+/* Medium phones (390-430px like iPhone 14/15/16 Pro) */
+@media (max-width: 430px) and (min-width: 390px) {
+    .light-modes-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .light-mode-btn {
+        font-size: 0.55rem;
+        padding: 0.45rem 0.2rem;
+    }
+}
+
+/* Smaller phones */
+@media (max-width: 389px) {
+    .light-modes-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .light-mode-btn {
+        font-size: 0.7rem;
+        padding: 0.6rem 0.4rem;
+    }
+}
+
+/* Touch-friendly adjustments for all mobile */
+@media (hover: none) and (pointer: coarse) {
+    .light-mode-btn {
+        min-height: 44px;
+    }
+
+    .upload-area,
+    .camera-btn {
+        min-height: 80px;
+    }
+
+    .slider-row input[type="range"] {
+        height: 36px;
+    }
+
+    .calc-btn {
+        min-height: 48px;
+    }
+
+    .inner-tab-btn {
+        min-height: 40px;
+    }
+}
+
+/* Landscape mode on phones */
+@media (max-width: 932px) and (orientation: landscape) {
+    .light-sim-container {
+        grid-template-columns: 280px 1fr;
+        grid-template-rows: 1fr;
+        height: calc(100vh - 120px);
+    }
+
+    .converter-container {
+        grid-template-columns: 250px 1fr;
+        grid-template-rows: 1fr;
+        height: calc(100vh - 120px);
+    }
+
+    .converter-previews {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .light-controls {
+        max-height: calc(100vh - 140px);
+        overflow-y: auto;
+    }
+
+    .light-modes-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

@@ -516,11 +516,11 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const tabId = item.dataset.tab;
 
-            // Check if restricted - Analytics and Vision Lab require login
-            if ((tabId === 'analytics' || tabId === 'vision-lab') && !isLoggedIn) {
-                showLoginModal();
-                return;
-            }
+            // Login check disabled - all tabs are now accessible
+            // if ((tabId === 'analytics' || tabId === 'vision-lab') && !isLoggedIn) {
+            //     showLoginModal();
+            //     return;
+            // }
 
             navItems.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
