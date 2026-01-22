@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
+    // Global processing canvas for lighting simulation (shared with converter)
+    let processingCanvas = document.createElement('canvas');
+
     // Lens FA Data from Hikrobotics
     const lensData = [
         { model: 'MVL-HF0628M-6MPE', focalLength: '6 mm', imageSize: 'Ø9 mm (1/1.8\'\')' },
@@ -513,8 +516,8 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const tabId = item.dataset.tab;
 
-            // Check if restricted
-            if (tabId === 'analytics' && !isLoggedIn) {
+            // Check if restricted - Analytics and Vision Lab require login
+            if ((tabId === 'analytics' || tabId === 'vision-lab') && !isLoggedIn) {
                 showLoginModal();
                 return;
             }
@@ -532,10 +535,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update search placeholder based on tab
             const searchInput = document.getElementById('search-input');
             if (searchInput) {
-                if (tabId === 'dashboard' || tabId === 'live') {
+                if (tabId === 'lenses') {
                     searchInput.placeholder = 'Search lenses...';
                 } else if (tabId === 'cameras') {
                     searchInput.placeholder = 'Search cameras...';
+                } else if (tabId === 'vision-lab') {
+                    searchInput.placeholder = 'Search tools...';
                 } else {
                     searchInput.placeholder = 'Search...';
                 }
@@ -575,21 +580,80 @@ document.addEventListener('DOMContentLoaded', () => {
     const innerTabBtns = document.querySelectorAll('.inner-tab-btn');
     innerTabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            innerTabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            // Find parent panel to only target buttons within the same group if needed, 
+            // but here we can just use the data attribute to distinguish
+            if (btn.dataset.category) {
+                // Camera categories
+                const cameraBtns = document.querySelectorAll('.inner-tab-btn[data-category]');
+                cameraBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
 
-            const category = btn.dataset.category;
-            if (category === 'hik') {
-                currentFilteredData = cameraData.filter(cam => cam.model.startsWith('MV-'));
-            } else if (category === 'basler') {
-                currentFilteredData = cameraData.filter(cam => cam.model.toLowerCase().includes('basler') || cam.model.startsWith('acA') || cam.model.startsWith('daA') || cam.model.startsWith('a2A') || cam.model.startsWith('a4A') || cam.model.startsWith('puA'));
-            } else if (category === 'cognex') {
-                currentFilteredData = cameraData.filter(cam => cam.model.toLowerCase().includes('cognex') || cam.model.startsWith('CIC') || cam.model.startsWith('IS') || cam.model.startsWith('DM'));
-            } else {
-                currentFilteredData = cameraData;
+                const category = btn.dataset.category;
+                if (category === 'hik') {
+                    currentFilteredData = cameraData.filter(cam => cam.model.startsWith('MV-'));
+                } else if (category === 'basler') {
+                    currentFilteredData = cameraData.filter(cam => cam.model.toLowerCase().includes('basler') || cam.model.startsWith('acA') || cam.model.startsWith('daA') || cam.model.startsWith('a2A') || cam.model.startsWith('a4A') || cam.model.startsWith('puA'));
+                } else if (category === 'cognex') {
+                    currentFilteredData = cameraData.filter(cam => cam.model.toLowerCase().includes('cognex') || cam.model.startsWith('CIC') || cam.model.startsWith('IS') || cam.model.startsWith('DM'));
+                } else {
+                    currentFilteredData = cameraData;
+                }
+                currentPage = 1;
+                renderTable(currentFilteredData);
+            } else if (btn.dataset.lensCategory) {
+                // Lens categories
+                const lensBtns = document.querySelectorAll('.inner-tab-btn[data-lens-category]');
+                lensBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const lensCategory = btn.dataset.lensCategory;
+                const faContent = document.getElementById('lens-fa-content');
+                const teleContent = document.getElementById('lens-tele-content');
+
+                if (lensCategory === 'fa') {
+                    faContent.style.display = 'block';
+                    teleContent.style.display = 'none';
+                } else if (lensCategory === 'tele') {
+                    faContent.style.display = 'none';
+                    teleContent.style.display = 'block';
+                }
+            } else if (btn.dataset.visionTool) {
+                // Vision Lab tools
+                const visionBtns = document.querySelectorAll('.inner-tab-btn[data-vision-tool]');
+                visionBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const tool = btn.dataset.visionTool;
+                const lightingContent = document.getElementById('vision-lighting-content');
+                const converterContent = document.getElementById('vision-converter-content');
+
+                if (tool === 'lighting') {
+                    lightingContent.style.display = 'block';
+                    converterContent.style.display = 'none';
+                } else if (tool === 'converter') {
+                    lightingContent.style.display = 'none';
+                    converterContent.style.display = 'block';
+
+                    // Sync processed image from Lighting Sim if available
+                    const convCanvas = document.getElementById('conv-source-canvas');
+                    const convSourcePlaceholder = document.getElementById('conv-source-placeholder');
+                    // Use the internal processingCanvas which contains the processed image
+                    if (processingCanvas && processingCanvas.width > 0 && processingCanvas.height > 0 && convCanvas) {
+                        const ctx = convCanvas.getContext('2d');
+                        convCanvas.width = processingCanvas.width;
+                        convCanvas.height = processingCanvas.height;
+                        ctx.drawImage(processingCanvas, 0, 0);
+
+                        // Hide source placeholder since we have an image
+                        if (convSourcePlaceholder) convSourcePlaceholder.style.display = 'none';
+
+                        // Update the internal state for conversion with processed image data
+                        if (typeof updateConverterState === 'function') {
+                            updateConverterState(ctx.getImageData(0, 0, convCanvas.width, convCanvas.height));
+                        }
+                    }
+                }
             }
-            currentPage = 1;
-            renderTable(currentFilteredData);
         });
     });
 
@@ -1020,6 +1084,598 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    // ===== LIGHTING SIMULATION LOGIC =====
+    const lightUploadArea = document.getElementById('light-upload-area');
+    const lightFileInput = document.getElementById('light-file-input');
+    const lightSimImage = document.getElementById('light-sim-image');
+    const lightPreviewWrapper = document.getElementById('light-preview-wrapper');
+    const noImagePlaceholder = document.querySelector('.no-image-placeholder');
+    const lightModeButtons = document.querySelectorAll('.light-mode-btn');
+    const lightIntensity = document.getElementById('light-intensity');
+    const lightContrast = document.getElementById('light-contrast');
+    const lightThreshold = document.getElementById('light-threshold');
+    const lightEdge = document.getElementById('light-edge');
+    const thresholdContainer = document.getElementById('threshold-container');
+    const edgeContainer = document.getElementById('edge-container');
+    const lightCameraBtn = document.getElementById('light-camera-btn');
+    const cameraPreviewContainer = document.getElementById('camera-preview-container');
+    const cameraVideo = document.getElementById('camera-video');
+    const cameraCaptureBtn = document.getElementById('camera-capture-btn');
+
+    // processingCanvas is declared at the top of DOMContentLoaded scope
+    processingCanvas = document.createElement('canvas');
+    let originalLightImageData = null;
+    let cameraStream = null;
+
+    // Handle Image Upload
+    if (lightUploadArea) {
+        lightUploadArea.addEventListener('click', () => lightFileInput.click());
+
+        lightUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            lightUploadArea.style.borderColor = 'var(--accent)';
+        });
+
+        lightUploadArea.addEventListener('dragleave', () => {
+            lightUploadArea.style.borderColor = 'var(--glass-border)';
+        });
+
+        lightUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleLightImage(file);
+            }
+        });
+    }
+
+    if (lightFileInput) {
+        lightFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleLightImage(file);
+        });
+    }
+
+    function handleLightImage(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                lightSimImage.src = img.src;
+                lightSimImage.style.display = 'block';
+                noImagePlaceholder.style.display = 'none';
+
+                // Prepare Canvas for processing
+                processingCanvas.width = img.naturalWidth;
+                processingCanvas.height = img.naturalHeight;
+                const ctx = processingCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                originalLightImageData = ctx.getImageData(0, 0, processingCanvas.width, processingCanvas.height);
+
+                applyLightingEffects();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Camera Logic
+    if (lightCameraBtn) {
+        lightCameraBtn.addEventListener('click', async () => {
+            if (cameraStream) return; // Already running
+
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' } // Prefer back camera
+                });
+                cameraVideo.srcObject = cameraStream;
+                cameraPreviewContainer.style.display = 'block';
+                lightCameraBtn.innerHTML = '<i data-lucide="camera-off"></i><span>Stop Camera</span>';
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                alert("Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.");
+            }
+        });
+    }
+
+    if (cameraCaptureBtn) {
+        cameraCaptureBtn.addEventListener('click', () => {
+            if (!cameraStream) return;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = cameraVideo.videoWidth;
+            tempCanvas.height = cameraVideo.videoHeight;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(cameraVideo, 0, 0);
+
+            const dataUrl = tempCanvas.toDataURL('image/png');
+
+            // Set as current image
+            lightSimImage.src = dataUrl;
+            lightSimImage.style.display = 'block';
+            noImagePlaceholder.style.display = 'none';
+
+            // Store for processing
+            processingCanvas.width = tempCanvas.width;
+            processingCanvas.height = tempCanvas.height;
+            const pCtx = processingCanvas.getContext('2d');
+            pCtx.drawImage(tempCanvas, 0, 0);
+            originalLightImageData = pCtx.getImageData(0, 0, processingCanvas.width, processingCanvas.height);
+
+            // Cleanup camera
+            stopCamera();
+            applyLightingEffects();
+        });
+    }
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+        cameraPreviewContainer.style.display = 'none';
+        lightCameraBtn.innerHTML = '<i data-lucide="camera"></i><span>Take Photo</span>';
+        lucide.createIcons();
+    }
+
+    // Handle Light Mode Selection
+    const lightTipText = document.getElementById('light-tip-text');
+    const lightingTips = {
+        'none': 'Normal ambient lighting for general viewing.',
+        'coaxial': 'Best for flat specular surfaces, hidden engravings, or reflective barcodes.',
+        'ring-flat': 'General inspection, providing bright and even direct illumination.',
+        'darkfield': 'Highlights surface defects, scratches, dust, and embossed text.',
+        'backlight': 'Ideal for silhouetting parts, measuring dimensions, and edge detection.',
+        'dome': 'Shadow-free lighting for shiny, curved, or irregular surfaces.',
+        'bar': 'Highlights surface texture or creates shadows to show depth.',
+        'diffuse': 'Uniform soft lighting to minimize glare on moderately reflective parts.'
+    };
+
+    lightModeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            lightModeButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const mode = btn.dataset.light;
+            if (lightTipText) lightTipText.textContent = lightingTips[mode] || lightingTips['none'];
+
+            // Apply mode class to wrapper
+            lightPreviewWrapper.className = 'preview-wrapper mode-' + mode;
+            applyLightingEffects();
+        });
+    });
+
+    // Handle Sliders
+    if (lightIntensity) lightIntensity.addEventListener('input', applyLightingEffects);
+    if (lightContrast) lightContrast.addEventListener('input', applyLightingEffects);
+    if (lightThreshold) lightThreshold.addEventListener('input', applyLightingEffects);
+    if (lightEdge) lightEdge.addEventListener('input', applyLightingEffects);
+
+    function applyLightingEffects() {
+        if (!originalLightImageData) return;
+
+        const mode = document.querySelector('.light-mode-btn.active').dataset.light;
+        const intensity = parseInt(lightIntensity.value) / 100; // Normalize to 0-1.5
+        const contrast = parseInt(lightContrast.value) / 100;   // Normalize to 0-2
+        const threshold = parseInt(lightThreshold.value);
+        const edgeSens = parseInt(lightEdge.value);
+
+        // Show/Hide specific sliders based on mode
+        thresholdContainer.style.display = mode === 'backlight' ? 'block' : 'none';
+        edgeContainer.style.display = mode === 'darkfield' ? 'block' : 'none';
+
+        const ctx = processingCanvas.getContext('2d');
+        const width = originalLightImageData.width;
+        const height = originalLightImageData.height;
+        const imageData = new ImageData(
+            new Uint8ClampedArray(originalLightImageData.data),
+            width,
+            height
+        );
+        const data = imageData.data;
+        const tempData = new Uint8ClampedArray(originalLightImageData.data);
+
+        // Center point for radial calculations
+        const cx = width / 2;
+        const cy = height / 2;
+        const maxRadius = Math.sqrt(cx * cx + cy * cy);
+
+        // ===== PIXEL-LEVEL PROCESSING FOR EACH LIGHT MODE =====
+        switch (mode) {
+            case 'none': // Normal - ambient lighting with even illumination
+                for (let i = 0; i < data.length; i += 4) {
+                    // Apply brightness and contrast
+                    for (let c = 0; c < 3; c++) {
+                        let val = data[i + c];
+                        val = ((val / 255 - 0.5) * contrast + 0.5) * 255 * intensity;
+                        data[i + c] = Math.max(0, Math.min(255, val));
+                    }
+                }
+                break;
+
+            case 'coaxial': // Coaxial - highlights specular/reflective surfaces, reduces texture
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i], g = data[i + 1], b = data[i + 2];
+                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                    // Coaxial light emphasizes brightness variations, reduces color saturation
+                    // Simulates light coming from camera axis direction
+                    const specularBoost = luminance > 180 ? 1.3 : 1.0;
+
+                    for (let c = 0; c < 3; c++) {
+                        // Desaturate and boost bright areas (simulating specular reflection)
+                        let val = data[i + c];
+                        val = luminance * 0.7 + val * 0.3; // Partially desaturate
+                        val = ((val / 255 - 0.5) * contrast * 1.3 + 0.5) * 255;
+                        val *= intensity * specularBoost;
+                        data[i + c] = Math.max(0, Math.min(255, val));
+                    }
+                }
+                break;
+
+            case 'ring-flat': // Ring Flat - even direct illumination, slight vignette
+                for (let i = 0; i < data.length; i += 4) {
+                    const pixelIndex = i / 4;
+                    const x = pixelIndex % width;
+                    const y = Math.floor(pixelIndex / width);
+
+                    // Slight center-weighted illumination (ring light effect)
+                    const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+                    const ringFactor = 1.0 - (distFromCenter / maxRadius) * 0.15;
+
+                    for (let c = 0; c < 3; c++) {
+                        let val = data[i + c];
+                        val = ((val / 255 - 0.5) * contrast + 0.5) * 255;
+                        val *= intensity * ringFactor * 1.1; // Slightly brighter overall
+                        data[i + c] = Math.max(0, Math.min(255, val));
+                    }
+                }
+                break;
+
+            case 'darkfield': // Dark Field - highlights edges, scratches, surface defects
+                // Sobel edge detection for realistic dark field effect
+                const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+                const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let gx = 0, gy = 0;
+
+                        // Apply Sobel operator
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4;
+                                const gray = (tempData[idx] + tempData[idx + 1] + tempData[idx + 2]) / 3;
+                                const kernelIdx = (ky + 1) * 3 + (kx + 1);
+                                gx += gray * sobelX[kernelIdx];
+                                gy += gray * sobelY[kernelIdx];
+                            }
+                        }
+
+                        const magnitude = Math.sqrt(gx * gx + gy * gy);
+                        const i = (y * width + x) * 4;
+
+                        // Dark field shows edges bright on dark background
+                        let edgeVal = magnitude > edgeSens ? magnitude * intensity * 1.5 : 0;
+                        edgeVal = Math.min(255, edgeVal);
+
+                        data[i] = data[i + 1] = data[i + 2] = edgeVal;
+                    }
+                }
+                break;
+
+            case 'backlight': // Backlight - silhouette/binary thresholding
+                for (let i = 0; i < data.length; i += 4) {
+                    const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                    const val = luminance > threshold ? 255 : 0;
+                    data[i] = data[i + 1] = data[i + 2] = val;
+                }
+                break;
+
+            case 'dome': // Diffuse Dome - very soft, shadow-free, reduced contrast
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i], g = data[i + 1], b = data[i + 2];
+
+                    // Dome light provides extremely even illumination
+                    // Reduces shadows and contrast significantly
+                    for (let c = 0; c < 3; c++) {
+                        let val = data[i + c];
+                        // Reduce contrast (shadows lifted, highlights reduced)
+                        val = ((val / 255 - 0.5) * contrast * 0.6 + 0.5) * 255;
+                        // Slight warmth from diffuse light source
+                        if (c === 0) val *= 1.02; // Slight red boost
+                        if (c === 2) val *= 0.98; // Slight blue reduction
+                        val *= intensity * 0.95;
+                        data[i + c] = Math.max(0, Math.min(255, val));
+                    }
+                }
+                break;
+
+            case 'bar': // Bar Light - directional lighting creating shadows/texture highlights
+                for (let i = 0; i < data.length; i += 4) {
+                    const pixelIndex = i / 4;
+                    const x = pixelIndex % width;
+                    const y = Math.floor(pixelIndex / width);
+
+                    // Simulate directional light from left side (bar light position)
+                    const directionFactor = 0.7 + (x / width) * 0.6; // Gradient left to right
+
+                    // Calculate gradient for texture enhancement
+                    if (x > 0 && x < width - 1) {
+                        const leftIdx = i - 4;
+                        const rightIdx = i + 4;
+                        const leftGray = (tempData[leftIdx] + tempData[leftIdx + 1] + tempData[leftIdx + 2]) / 3;
+                        const rightGray = (tempData[rightIdx] + tempData[rightIdx + 1] + tempData[rightIdx + 2]) / 3;
+                        const gradient = (rightGray - leftGray) * 0.3; // Surface normal estimation
+
+                        for (let c = 0; c < 3; c++) {
+                            let val = data[i + c];
+                            val = ((val / 255 - 0.5) * contrast * 1.2 + 0.5) * 255;
+                            val *= intensity * directionFactor;
+                            val += gradient * intensity * 30; // Add directional shading
+                            data[i + c] = Math.max(0, Math.min(255, val));
+                        }
+                    }
+                }
+                break;
+
+            case 'diffuse': // Diffuse Area - soft uniform lighting with minimal glare
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i], g = data[i + 1], b = data[i + 2];
+                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                    // Diffuse area light reduces specular highlights
+                    const highlightReduction = luminance > 200 ? 0.85 : 1.0;
+
+                    for (let c = 0; c < 3; c++) {
+                        let val = data[i + c];
+                        // Moderate contrast, good color retention
+                        val = ((val / 255 - 0.5) * contrast * 0.85 + 0.5) * 255;
+                        val *= intensity * highlightReduction;
+                        data[i + c] = Math.max(0, Math.min(255, val));
+                    }
+                }
+                break;
+
+            default:
+                // Fallback - just apply basic brightness/contrast
+                for (let i = 0; i < data.length; i += 4) {
+                    for (let c = 0; c < 3; c++) {
+                        let val = data[i + c];
+                        val = ((val / 255 - 0.5) * contrast + 0.5) * 255 * intensity;
+                        data[i + c] = Math.max(0, Math.min(255, val));
+                    }
+                }
+        }
+
+        // Write processed image to canvas and display
+        ctx.putImageData(imageData, 0, 0);
+        lightSimImage.src = processingCanvas.toDataURL();
+        lightSimImage.style.filter = 'none'; // All processing done in canvas
+
+        // Overlay adjustments
+        const overlay = document.getElementById('light-overlay-layer');
+        if (overlay) {
+            overlay.style.opacity = intensity;
+        }
+    }
+
+    // ===== IMAGE CONVERTER LOGIC =====
+    const convUploadArea = document.getElementById('conv-upload-area');
+    const convFileInput = document.getElementById('conv-file-input');
+    const convSourceCanvas = document.getElementById('conv-source-canvas');
+    const convResultCanvas = document.getElementById('conv-result-canvas');
+    const convModeSelect = document.getElementById('conv-mode-select');
+    const convDownloadBtn = document.getElementById('conv-download-btn');
+    const convSourcePlaceholder = document.getElementById('conv-source-placeholder');
+    const convResultPlaceholder = document.getElementById('conv-result-placeholder');
+
+    let originalImageData = null;
+
+    window.updateConverterState = (imgData) => {
+        originalImageData = imgData;
+        if (convSourcePlaceholder) convSourcePlaceholder.style.display = 'none';
+        processConversion();
+        if (convDownloadBtn) convDownloadBtn.disabled = false;
+    };
+
+    if (convUploadArea) {
+        convUploadArea.addEventListener('click', () => convFileInput.click());
+        convFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleConverterFile(file);
+        });
+    }
+
+    function handleConverterFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                // Setup Source Canvas
+                convSourceCanvas.width = img.width;
+                convSourceCanvas.height = img.height;
+                const ctx = convSourceCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                originalImageData = ctx.getImageData(0, 0, img.width, img.height);
+                convSourcePlaceholder.style.display = 'none';
+
+                // Trigger conversion
+                processConversion();
+                convDownloadBtn.disabled = false;
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function encodeBMP(imageData) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+
+        // Row size in bytes (padded to 4 byte boundary)
+        const rowSize = Math.floor((24 * width + 31) / 32) * 4;
+        const pixelDataSize = rowSize * height;
+        const fileSize = 14 + 40 + pixelDataSize;
+
+        const buffer = new ArrayBuffer(fileSize);
+        const view = new DataView(buffer);
+
+        // --- BMP FILE HEADER (14 bytes) ---
+        view.setUint16(0, 0x4D42, true); // "BM"
+        view.setUint32(2, fileSize, true);
+        view.setUint16(6, 0, true); // reserved 1
+        view.setUint16(8, 0, true); // reserved 2
+        view.setUint32(10, 14 + 40, true); // offset to pixel data
+
+        // --- DIB HEADER (BITMAPINFOHEADER - 40 bytes) ---
+        view.setUint32(14, 40, true); // size of this header
+        view.setInt32(18, width, true);
+        view.setInt32(22, height, true); // positive means bottom-up
+        view.setUint16(26, 1, true); // planes
+        view.setUint16(28, 24, true); // bit count (24-bit RGB)
+        view.setUint32(30, 0, true); // compression (none)
+        view.setUint32(34, pixelDataSize, true); // size of raw bitmap data
+        view.setInt32(38, 2835, true); // x pixels per meter (approx 72dpi)
+        view.setInt32(42, 2835, true); // y pixels per meter
+        view.setUint32(46, 0, true); // colors in palette
+        view.setUint32(50, 0, true); // important colors
+
+        // --- PIXEL DATA ---
+        // BMP is stored bottom-up, BGR
+        let offset = 54;
+        for (let y = height - 1; y >= 0; y--) {
+            const rowStart = y * width * 4;
+            for (let x = 0; x < width; x++) {
+                const i = rowStart + (x * 4);
+                view.setUint8(offset++, data[i + 2]); // B
+                view.setUint8(offset++, data[i + 1]); // G
+                view.setUint8(offset++, data[i]);     // R
+            }
+            // Padding
+            for (let p = 0; p < rowSize - width * 3; p++) {
+                view.setUint8(offset++, 0);
+            }
+        }
+
+        return new Blob([buffer], { type: 'image/bmp' });
+    }
+
+    if (convModeSelect) {
+        convModeSelect.addEventListener('change', processConversion);
+    }
+
+    function processConversion() {
+        if (!originalImageData) return;
+
+        const mode = convModeSelect.value;
+        const width = originalImageData.width;
+        const height = originalImageData.height;
+
+        convResultCanvas.width = width;
+        convResultCanvas.height = height;
+        const ctx = convResultCanvas.getContext('2d');
+        const resultImageData = ctx.createImageData(width, height);
+
+        const src = originalImageData.data;
+        const dst = resultImageData.data;
+
+        for (let i = 0; i < src.length; i += 4) {
+            const r = src[i];
+            const g = src[i + 1];
+            const b = src[i + 2];
+            const a = src[i + 3];
+
+            let mono = 0;
+
+            switch (mode) {
+                case 'intensity': // G601
+                    mono = 0.299 * r + 0.587 * g + 0.114 * b;
+                    break;
+                case 'red':
+                    mono = r;
+                    break;
+                case 'green':
+                    mono = g;
+                    break;
+                case 'blue':
+                    mono = b;
+                    break;
+                case 'hsi-i':
+                    mono = (r + g + b) / 3;
+                    break;
+                case 'hsi-s': {
+                    const max = Math.max(r, g, b);
+                    const min = Math.min(r, g, b);
+                    mono = max === 0 ? 0 : (1 - min / max) * 255;
+                    break;
+                }
+                case 'hsi-h': {
+                    // Approximate Hue calculation (0-360 mapped to 0-255)
+                    const max = Math.max(r, g, b);
+                    const min = Math.min(r, g, b);
+                    const delta = max - min;
+                    let h = 0;
+                    if (delta === 0) h = 0;
+                    else if (max === r) h = 60 * (((g - b) / delta) % 6);
+                    else if (max === g) h = 60 * (((b - r) / delta) + 2);
+                    else if (max === b) h = 60 * (((r - g) / delta) + 4);
+                    if (h < 0) h += 360;
+                    mono = (h / 360) * 255;
+                    break;
+                }
+            }
+
+            dst[i] = dst[i + 1] = dst[i + 2] = mono;
+            dst[i + 3] = a;
+        }
+
+        ctx.putImageData(resultImageData, 0, 0);
+        convResultPlaceholder.style.display = 'none';
+        lucide.createIcons();
+    }
+
+    if (convDownloadBtn) {
+        convDownloadBtn.addEventListener('click', async () => {
+            if (!convResultCanvas) return;
+
+            const ctx = convResultCanvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, convResultCanvas.width, convResultCanvas.height);
+            const bmpBlob = encodeBMP(imageData);
+            const fileName = `mono_converted_${convModeSelect.value}.bmp`;
+
+            // Try File System Access API (Save As Dialog)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: fileName,
+                        types: [{
+                            description: 'BMP Image',
+                            accept: { 'image/bmp': ['.bmp'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(bmpBlob);
+                    await writable.close();
+                } catch (err) {
+                    // User cancelled or error
+                    console.log('Save cancelled or failed', err);
+                }
+            } else {
+                // Fallback for older browsers
+                const url = URL.createObjectURL(bmpBlob);
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = url;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            }
+        });
     }
 
     // Close modal on background click

@@ -1164,6 +1164,368 @@ input[type="checkbox"] {
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* Lighting Simulation Tab */
+.light-sim-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+    height: calc(100vh - 250px);
+}
+
+.light-controls {
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.control-group h3 {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-area {
+    border: 2px dashed var(--glass-border);
+    border-radius: 12px;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.upload-area:hover {
+    border-color: var(--accent);
+    background: rgba(0, 242, 255, 0.05);
+}
+
+.upload-area i {
+    width: 32px;
+    height: 32px;
+    opacity: 0.5;
+}
+
+.upload-area span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.light-modes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.light-mode-btn {
+    padding: 0.75rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.light-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.light-mode-btn.active {
+    background: var(--accent);
+    color: var(--bg-dark);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+.slider-row {
+    margin-bottom: 1rem;
+}
+
+.slider-row label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.slider-row input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+}
+
+.light-preview-pane {
+    position: relative;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.preview-wrapper {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+#light-sim-image {
+    display: block;
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+}
+
+.no-image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.no-image-placeholder i {
+    width: 64px;
+    height: 64px;
+}
+
+.upload-options {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.upload-options .upload-area {
+    flex: 1;
+}
+
+.camera-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(0, 242, 255, 0.05);
+    border: 1px dashed var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.camera-btn:hover {
+    border-color: var(--accent);
+    background: rgba(0, 242, 255, 0.1);
+    color: var(--accent);
+}
+
+.camera-btn i {
+    width: 32px;
+    height: 32px;
+}
+
+.camera-btn span {
+    font-size: 0.8rem;
+}
+
+#light-overlay-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    transition: width 0.3s ease, height 0.3s ease;
+    /* Transition for position and size */
+    --light-x: 50%;
+    --light-y: 50%;
+}
+
+/* Specific Light Simulation Classes */
+.mode-coaxial #light-overlay-layer {
+    background: radial-gradient(circle at var(--light-x) var(--light-y), rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 50%);
+    mix-blend-mode: screen;
+}
+
+.mode-ring-flat #light-overlay-layer {
+    background: radial-gradient(circle at var(--light-x) var(--light-y), rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.5) 60%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.mode-darkfield #light-sim-image {
+    filter: brightness(0.3) contrast(2.5) grayscale(0.2);
+}
+
+.mode-darkfield #light-overlay-layer {
+    background: radial-gradient(circle at var(--light-x) var(--light-y), rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.8) 95%);
+    mix-blend-mode: color-dodge;
+}
+
+.mode-backlight #light-sim-image {
+    /* Filters are handled in JS for dynamic control, but base helps */
+    mix-blend-mode: multiply;
+    /* Helps darken against a white background if container is white */
+}
+
+.mode-backlight #light-overlay-layer {
+    background: none;
+    /* No overlay for pure binary/silhouette look */
+    mix-blend-mode: normal;
+    display: none;
+}
+
+.mode-dome #light-overlay-layer {
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+        radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 60%),
+        rgba(255, 255, 255, 0.1);
+    mix-blend-mode: lighten;
+}
+
+.mode-bar #light-overlay-layer {
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 40%);
+    mix-blend-mode: soft-light;
+}
+
+.mode-diffuse #light-overlay-layer {
+    background: rgba(255, 255, 255, 0.15);
+    mix-blend-mode: overlay;
+}
+
+/* Material State Modifiers */
+/* Removed as requested */
+
+
+/* Sample Gallery & Material Toggle Styles Removed */
+
+
+.usage-tip-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 242, 255, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.tip-label {
+    display: block;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+}
+
+/* Image Converter Tab */
+.converter-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+    height: calc(100vh - 250px);
+}
+
+.converter-controls {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+.converter-previews {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    height: 100%;
+}
+
+.preview-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.preview-header {
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.preview-canvas-container {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.preview-canvas-container canvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.canvas-placeholder {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+    opacity: 0.3;
+}
+
+.canvas-placeholder i {
+    width: 48px;
+    height: 48px;
+}
+
+.highlight-border {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+}
+
+.vision-tool-content {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* iPhone 16 Pro Max specific adjustments for safe areas */
 @supports (padding: env(safe-area-inset-bottom)) {
     .app-container {
