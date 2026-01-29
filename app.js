@@ -871,8 +871,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const resStr = calcCameraType.dataset.currentRes || '';
             const resWidth = parseInt(resStr.split('×')[0]) || 1;
             const pixelSizeVal = fovWidth / resWidth;
-            calcPixelSize.value = pixelSizeVal.toFixed(4) + ' mm/px';
-            calcVisionError.value = (pixelSizeVal * 3).toFixed(4) + ' mm';
+            calcPixelSize.value = pixelSizeVal.toFixed(4);
+            calcVisionError.value = (pixelSizeVal * 3).toFixed(4);
 
             lucide.createIcons();
         });
@@ -930,8 +930,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const resStr = calcCameraType.dataset.currentRes || '';
             const resWidth = parseInt(resStr.split('×')[0]) || 1;
             const pixelSizeVal = fovWidth / resWidth;
-            calcPixelSize.value = pixelSizeVal.toFixed(4) + ' mm/px';
-            calcVisionError.value = (pixelSizeVal * 3).toFixed(4) + ' mm';
+            calcPixelSize.value = pixelSizeVal.toFixed(4);
+            calcVisionError.value = (pixelSizeVal * 3).toFixed(4);
 
             lucide.createIcons();
         });
@@ -993,18 +993,185 @@ document.addEventListener('DOMContentLoaded', () => {
             const fovWidth = sensorWidth / mag;
             const fovHeight = sensorHeight / mag;
 
-            teleCalcFovWidth.value = fovWidth.toFixed(2) + ' mm';
+            teleCalcFovWidth.value = fovWidth.toFixed(2);
             teleCalcFovHeight.value = fovHeight.toFixed(2) + ' mm';
 
             // Calculate Pixel Size and Vision Error
             const resStr = teleCalcCameraType.dataset.currentRes || '';
             const resWidth = parseInt(resStr.split('×')[0]) || 1;
             const pixelSizeVal = fovWidth / resWidth;
-            teleCalcPixelSize.value = pixelSizeVal.toFixed(4) + ' mm/px';
-            teleCalcVisionError.value = (pixelSizeVal * 3).toFixed(4) + ' mm';
+            teleCalcPixelSize.value = pixelSizeVal.toFixed(4);
+            teleCalcVisionError.value = (pixelSizeVal * 3).toFixed(4);
 
             lucide.createIcons();
         });
+    }
+
+    // Helper to extract Megapixel resolution from model name (e.g., -6MPE, -10MP, -25MP)
+    function getMPFromModel(model) {
+        const match = model.match(/-(\d+)MP/);
+        if (match) return parseInt(match[1]);
+        const matchE = model.match(/-(\d+)MPE/);
+        if (matchE) return parseInt(matchE[1]);
+
+        // Telecentric fallback patterns
+        if (model.includes('10MP')) return 10;
+        if (model.includes('5MP')) return 5;
+        if (model.includes('MPC')) return 6; // Often used for 5-6MP
+        return 2; // Default low resolution
+    }
+
+    // ===== VISION ACCURACY SYNC =====
+    if (teleCalcVisionError && teleCalcPixelSize) {
+        teleCalcVisionError.addEventListener('input', () => {
+            const acc = parseFloat(teleCalcVisionError.value);
+            if (!isNaN(acc)) {
+                teleCalcPixelSize.value = (acc / 3).toFixed(4);
+            }
+        });
+
+        teleCalcPixelSize.addEventListener('input', () => {
+            const px = parseFloat(teleCalcPixelSize.value);
+            if (!isNaN(px)) {
+                teleCalcVisionError.value = (px * 3).toFixed(4);
+            }
+        });
+    }
+
+    // ===== TELE HARDWARE RECOMMENDATION (Item 4) =====
+    const teleFindHardwareBtn = document.getElementById('tele-calculate-recommendation-btn');
+    const teleRecGrid = document.getElementById('tele-rec-grid');
+
+    if (teleFindHardwareBtn) {
+        teleFindHardwareBtn.addEventListener('click', () => {
+            const desiredFov = parseFloat(teleCalcFovWidth.value);
+            const desiredAcc = parseFloat(teleCalcVisionError.value);
+
+            if (!desiredFov || !desiredAcc) {
+                alert('Vui lòng nhập FOV Width và Vision Accuracy dự kiến cho hệ Telecentric!');
+                return;
+            }
+
+            const targetPixelSize = desiredAcc / 3;
+            const requiredResWidth = desiredFov / targetPixelSize;
+
+            let recommendations = [];
+
+            cameraData.forEach(cam => {
+                const resParts = cam.resolution.split('×').map(s => parseInt(s.trim()));
+                const resW = resParts[0];
+                const resH = resParts[1];
+
+                if (resW >= requiredResWidth * 0.8) {
+                    const sensorStr = cam.dimensions || sensorDimensionsMap[cam.sensorSize] || '0 × 0';
+                    const sensorParts = sensorStr.split('×').map(s => parseFloat(s.trim()));
+                    const sW = sensorParts[0];
+                    const sH = sensorParts[1];
+
+                    if (sW > 0) {
+                        const recMag = sW / desiredFov;
+
+                        let bestLens = null;
+                        let minMagDiff = Infinity;
+
+                        teleLensData.forEach(lens => {
+                            // Try to extract mag from model or data
+                            let lensMag = 1.0;
+                            if (lens.model.startsWith('TEC-M')) {
+                                lensMag = parseFloat(lens.model.substring(5, 7)) / 10;
+                            } else if (lens.model.startsWith('TEC-V')) {
+                                if (lens.model.includes('05')) lensMag = 0.5;
+                                else if (lens.model.includes('10')) lensMag = 1.0;
+                                else if (lens.model.includes('03')) lensMag = 0.34;
+                            }
+
+                            const diff = Math.abs(lensMag - recMag);
+
+                            // Resolution check
+                            const camMP = (resW * resH) / 1000000;
+                            const lensMP = getMPFromModel(lens.model);
+                            const resMatch = lensMP >= camMP;
+
+                            if (diff < minMagDiff) {
+                                minMagDiff = diff;
+                                bestLens = { ...lens, mag: lensMag, mp: lensMP, resMatch: resMatch };
+                            }
+                        });
+
+                        if (bestLens) {
+                            const actualFov = sW / bestLens.mag;
+                            const actualPxSize = actualFov / resW;
+                            const actualAcc = actualPxSize * 3;
+
+                            const camMP = (resW * resH) / 1000000;
+                            const resPenalty = bestLens.resMatch ? 0 : (camMP - bestLens.mp) * 5;
+
+                            recommendations.push({
+                                camera: cam,
+                                lens: bestLens,
+                                actualWd: parseFloat(bestLens.workingDistance.replace(/[^\d.]/g, '')),
+                                actualAcc: actualAcc,
+                                actualFov: actualFov,
+                                score: Math.abs(actualAcc - desiredAcc) + Math.abs(actualFov - desiredFov) / 5 + resPenalty
+                            });
+                        }
+                    }
+                }
+            });
+
+            recommendations.sort((a, b) => a.score - b.score);
+            const top2 = recommendations.slice(0, 2);
+
+            if (top2.length > 0) {
+                renderTeleRecommendations(top2);
+            } else {
+                teleRecGrid.innerHTML = '<div class="recommendation-card placeholder"><p>Không tìm thấy phần cứng Tele phù hợp.</p></div>';
+            }
+        });
+    }
+
+    function renderTeleRecommendations(recs) {
+        teleRecGrid.innerHTML = '';
+        recs.forEach((rec, index) => {
+            const card = document.createElement('div');
+            card.className = 'recommendation-card';
+            card.innerHTML = `
+                <div class="rec-header">
+                    <span class="rec-badge" style="background: var(--purple);">TELE OPTION ${index + 1}</span>
+                    <i data-lucide="check-circle" style="color: var(--purple); width: 16px;"></i>
+                </div>
+                <div class="rec-item">
+                    <div class="rec-icon"><i data-lucide="camera" style="color: var(--purple);"></i></div>
+                    <div class="rec-details">
+                        <h4>${rec.camera.model}</h4>
+                        <p>${rec.camera.resolution} | ${rec.camera.sensorSize}</p>
+                    </div>
+                </div>
+                <div class="rec-item">
+                    <div class="rec-icon"><i data-lucide="focus" style="color: var(--purple);"></i></div>
+                    <div class="rec-details">
+                        <h4>${rec.lens.model}</h4>
+                        <p>Res: ${rec.lens.mp}MP | Mag: ${rec.lens.mag}x | WD: ${rec.lens.workingDistance}</p>
+                    </div>
+                </div>
+                <div class="rec-stats">
+                    <div class="rec-stat">
+                        <span class="rec-stat-label">Actual FOV</span>
+                        <span class="rec-stat-value" style="color: var(--purple);">${rec.actualFov.toFixed(2)} mm</span>
+                    </div>
+                    <div class="rec-stat">
+                        <span class="rec-stat-label">Accuracy</span>
+                        <span class="rec-stat-value" style="color: var(--purple);">${rec.actualAcc.toFixed(4)} mm</span>
+                    </div>
+                    <div class="rec-stat">
+                        <span class="rec-stat-label">Score</span>
+                        <span class="rec-stat-value" style="color: var(--purple);">${(100 - rec.score).toFixed(1)}%</span>
+                    </div>
+                </div>
+            `;
+            teleRecGrid.appendChild(card);
+        });
+        lucide.createIcons();
     }
 
     // Login Functions
@@ -1287,7 +1454,6 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (mode) {
             case 'none': // Normal - ambient lighting with even illumination
                 for (let i = 0; i < data.length; i += 4) {
-                    // Apply brightness and contrast
                     for (let c = 0; c < 3; c++) {
                         let val = data[i + c];
                         val = ((val / 255 - 0.5) * contrast + 0.5) * 255 * intensity;
@@ -1296,152 +1462,167 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 break;
 
-            case 'coaxial': // Coaxial - highlights specular/reflective surfaces, reduces texture
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i], g = data[i + 1], b = data[i + 2];
-                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-
-                    // Coaxial light emphasizes brightness variations, reduces color saturation
-                    // Simulates light coming from camera axis direction
-                    const specularBoost = luminance > 180 ? 1.3 : 1.0;
-
-                    for (let c = 0; c < 3; c++) {
-                        // Desaturate and boost bright areas (simulating specular reflection)
-                        let val = data[i + c];
-                        val = luminance * 0.7 + val * 0.3; // Partially desaturate
-                        val = ((val / 255 - 0.5) * contrast * 1.3 + 0.5) * 255;
-                        val *= intensity * specularBoost;
-                        data[i + c] = Math.max(0, Math.min(255, val));
-                    }
-                }
-                break;
-
-            case 'ring-flat': // Ring Flat - even direct illumination, slight vignette
-                for (let i = 0; i < data.length; i += 4) {
-                    const pixelIndex = i / 4;
-                    const x = pixelIndex % width;
-                    const y = Math.floor(pixelIndex / width);
-
-                    // Slight center-weighted illumination (ring light effect)
-                    const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-                    const ringFactor = 1.0 - (distFromCenter / maxRadius) * 0.15;
-
-                    for (let c = 0; c < 3; c++) {
-                        let val = data[i + c];
-                        val = ((val / 255 - 0.5) * contrast + 0.5) * 255;
-                        val *= intensity * ringFactor * 1.1; // Slightly brighter overall
-                        data[i + c] = Math.max(0, Math.min(255, val));
-                    }
-                }
-                break;
-
-            case 'darkfield': // Dark Field - highlights edges, scratches, surface defects
-                // Sobel edge detection for realistic dark field effect
-                const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
-                const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
-
+            case 'coaxial': // Coaxial - highlights flat surfaces, specular response
                 for (let y = 1; y < height - 1; y++) {
                     for (let x = 1; x < width - 1; x++) {
-                        let gx = 0, gy = 0;
-
-                        // Apply Sobel operator
-                        for (let ky = -1; ky <= 1; ky++) {
-                            for (let kx = -1; kx <= 1; kx++) {
-                                const idx = ((y + ky) * width + (x + kx)) * 4;
-                                const gray = (tempData[idx] + tempData[idx + 1] + tempData[idx + 2]) / 3;
-                                const kernelIdx = (ky + 1) * 3 + (kx + 1);
-                                gx += gray * sobelX[kernelIdx];
-                                gy += gray * sobelY[kernelIdx];
-                            }
-                        }
-
-                        const magnitude = Math.sqrt(gx * gx + gy * gy);
                         const i = (y * width + x) * 4;
 
-                        // Dark field shows edges bright on dark background
-                        let edgeVal = magnitude > edgeSens ? magnitude * intensity * 1.5 : 0;
-                        edgeVal = Math.min(255, edgeVal);
+                        // Calculate local gradient as a proxy for surface tilt
+                        const leftGray = (tempData[i - 4] + tempData[i - 3] + tempData[i - 2]) / 3;
+                        const rightGray = (tempData[i + 4] + tempData[i + 5] + tempData[i + 6]) / 3;
+                        const topGray = (tempData[i - width * 4] + tempData[i - width * 4 + 1] + tempData[i - width * 4 + 2]) / 3;
+                        const bottomGray = (tempData[i + width * 4] + tempData[i + width * 4 + 1] + tempData[i + width * 4 + 2]) / 3;
 
-                        data[i] = data[i + 1] = data[i + 2] = edgeVal;
-                    }
-                }
-                break;
+                        const gx = rightGray - leftGray;
+                        const gy = bottomGray - topGray;
+                        const gradient = Math.sqrt(gx * gx + gy * gy);
 
-            case 'backlight': // Backlight - silhouette/binary thresholding
-                for (let i = 0; i < data.length; i += 4) {
-                    const luminance = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                    const val = luminance > threshold ? 255 : 0;
-                    data[i] = data[i + 1] = data[i + 2] = val;
-                }
-                break;
-
-            case 'dome': // Diffuse Dome - very soft, shadow-free, reduced contrast
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i], g = data[i + 1], b = data[i + 2];
-
-                    // Dome light provides extremely even illumination
-                    // Reduces shadows and contrast significantly
-                    for (let c = 0; c < 3; c++) {
-                        let val = data[i + c];
-                        // Reduce contrast (shadows lifted, highlights reduced)
-                        val = ((val / 255 - 0.5) * contrast * 0.6 + 0.5) * 255;
-                        // Slight warmth from diffuse light source
-                        if (c === 0) val *= 1.02; // Slight red boost
-                        if (c === 2) val *= 0.98; // Slight blue reduction
-                        val *= intensity * 0.95;
-                        data[i + c] = Math.max(0, Math.min(255, val));
-                    }
-                }
-                break;
-
-            case 'bar': // Bar Light - directional lighting creating shadows/texture highlights
-                for (let i = 0; i < data.length; i += 4) {
-                    const pixelIndex = i / 4;
-                    const x = pixelIndex % width;
-                    const y = Math.floor(pixelIndex / width);
-
-                    // Simulate directional light from left side (bar light position)
-                    const directionFactor = 0.7 + (x / width) * 0.6; // Gradient left to right
-
-                    // Calculate gradient for texture enhancement
-                    if (x > 0 && x < width - 1) {
-                        const leftIdx = i - 4;
-                        const rightIdx = i + 4;
-                        const leftGray = (tempData[leftIdx] + tempData[leftIdx + 1] + tempData[leftIdx + 2]) / 3;
-                        const rightGray = (tempData[rightIdx] + tempData[rightIdx + 1] + tempData[rightIdx + 2]) / 3;
-                        const gradient = (rightGray - leftGray) * 0.3; // Surface normal estimation
+                        // Physics: Flat surfaces (low gradient) reflect most light back
+                        const flatness = Math.exp(-gradient / 15);
+                        const luminance = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
 
                         for (let c = 0; c < 3; c++) {
                             let val = data[i + c];
-                            val = ((val / 255 - 0.5) * contrast * 1.2 + 0.5) * 255;
-                            val *= intensity * directionFactor;
-                            val += gradient * intensity * 30; // Add directional shading
+                            // Boost flat areas, darken tilted areas
+                            val = val * (0.6 + 0.8 * flatness);
+                            // Highlight already bright areas (specular)
+                            if (luminance > 200) val *= 1.2;
+
+                            val = ((val / 255 - 0.5) * contrast * 1.1 + 0.5) * 255 * intensity;
                             data[i + c] = Math.max(0, Math.min(255, val));
                         }
                     }
                 }
                 break;
 
-            case 'diffuse': // Diffuse Area - soft uniform lighting with minimal glare
+            case 'ring-flat': // Ring Flat - Directional ring light, emphasizes detail
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        const i = (y * width + x) * 4;
+                        const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+                        const falloff = 1.0 - (distFromCenter / maxRadius) * 0.2;
+
+                        // Shading based on gradient (simulating ring light angle)
+                        const gx = (tempData[i + 4] - tempData[i - 4]);
+                        const gy = (tempData[i + width * 4] - tempData[i - width * 4]);
+                        const tilt = (gx + gy) * 0.15; // 45-degree effective lighting angle
+
+                        for (let c = 0; c < 3; c++) {
+                            let val = data[i + c];
+                            val += tilt * intensity * 20; // Add micro-shading
+                            val = ((val / 255 - 0.5) * contrast + 0.5) * 255 * intensity * falloff;
+                            data[i + c] = Math.max(0, Math.min(255, val));
+                        }
+                    }
+                }
+                break;
+
+            case 'darkfield': // Dark Field - Extreme contrast, only edges visible
+                const dfThreshold = edgeSens;
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        const i = (y * width + x) * 4;
+
+                        // Sobel operator
+                        let gx = 0, gy = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const kidx = ((y + ky) * width + (x + kx)) * 4;
+                                const gray = (tempData[kidx] + tempData[kidx + 1] + tempData[kidx + 2]) / 3;
+                                const k = (ky + 1) * 3 + (kx + 1);
+                                const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+                                const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+                                gx += gray * sobelX[k];
+                                gy += gray * sobelY[k];
+                            }
+                        }
+
+                        const mag = Math.sqrt(gx * gx + gy * gy);
+                        // Hard cutoff for background, exponential boost for edges
+                        let val = mag > dfThreshold ? Math.pow(mag / dfThreshold, 1.5) * 20 : 0;
+                        val *= intensity * 2;
+
+                        data[i] = data[i + 1] = data[i + 2] = Math.min(255, val);
+                    }
+                }
+                break;
+
+            case 'backlight': // Backlight - Sharp silhouette with blooming
+                const bloomRadius = 3;
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const i = (y * width + x) * 4;
+                        const lum = (tempData[i] * 0.299 + tempData[i + 1] * 0.587 + tempData[i + 2] * 0.114);
+
+                        if (lum > threshold) {
+                            data[i] = data[i + 1] = data[i + 2] = 255;
+                        } else {
+                            // Check for blooming (light leaking from nearby bright areas)
+                            let isNearLight = false;
+                            for (let dy = -bloomRadius; dy <= bloomRadius; dy++) {
+                                if (isNearLight) break;
+                                for (let dx = -bloomRadius; dx <= bloomRadius; dx++) {
+                                    const nx = x + dx, ny = y + dy;
+                                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                        const ni = (ny * width + nx) * 4;
+                                        if ((tempData[ni] * 0.299 + tempData[ni + 1] * 0.587 + tempData[ni + 2] * 0.114) > threshold) {
+                                            isNearLight = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            // Apply soft glow at transition
+                            data[i] = data[i + 1] = data[i + 2] = isNearLight ? 50 * intensity : 0;
+                        }
+                    }
+                }
+                break;
+
+            case 'dome': // Diffuse Dome - Uniform, low-contrast, soft shadows
                 for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i], g = data[i + 1], b = data[i + 2];
-                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-
-                    // Diffuse area light reduces specular highlights
-                    const highlightReduction = luminance > 200 ? 0.85 : 1.0;
-
                     for (let c = 0; c < 3; c++) {
                         let val = data[i + c];
-                        // Moderate contrast, good color retention
-                        val = ((val / 255 - 0.5) * contrast * 0.85 + 0.5) * 255;
-                        val *= intensity * highlightReduction;
+                        // High dynamic range compression (Shadow lift)
+                        val = 255 * Math.pow(val / 255, 0.7);
+                        val = ((val / 255 - 0.5) * contrast * 0.5 + 0.5) * 255 * intensity;
+                        data[i + c] = Math.max(0, Math.min(255, val));
+                    }
+                }
+                break;
+
+            case 'bar': // Bar Light - Sharp directional side light
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        const i = (y * width + x) * 4;
+                        // Light from 45 degree top-left
+                        const gx = (tempData[i + 4] - tempData[i - 4]);
+                        const gy = (tempData[i + width * 4] - tempData[i - width * 4]);
+                        const shadowing = (gx + gy) * 0.4;
+
+                        for (let c = 0; c < 3; c++) {
+                            let val = data[i + c];
+                            val += shadowing * intensity * 25;
+                            val = ((val / 255 - 0.5) * contrast + 0.5) * 255 * intensity;
+                            data[i + c] = Math.max(0, Math.min(255, val));
+                        }
+                    }
+                }
+                break;
+
+            case 'diffuse': // Diffuse Area - Balanced, minimal highlights
+                for (let i = 0; i < data.length; i += 4) {
+                    const lum = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+                    const suppression = lum > 220 ? 0.7 : 1.0; // Reduce hot spots
+                    for (let c = 0; c < 3; c++) {
+                        let val = data[i + c] * suppression;
+                        val = ((val / 255 - 0.5) * contrast * 0.9 + 0.5) * 255 * intensity;
                         data[i + c] = Math.max(0, Math.min(255, val));
                     }
                 }
                 break;
 
             default:
-                // Fallback - just apply basic brightness/contrast
                 for (let i = 0; i < data.length; i += 4) {
                     for (let c = 0; c < 3; c++) {
                         let val = data[i + c];
@@ -1682,4 +1863,157 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (e) => {
         if (e.target === loginModal) hideLoginModal();
     });
+
+    // ===== VISION ACCURACY SYNC =====
+    if (calcVisionError && calcPixelSize) {
+        calcVisionError.addEventListener('input', () => {
+            const acc = parseFloat(calcVisionError.value);
+            if (!isNaN(acc)) {
+                calcPixelSize.value = (acc / 3).toFixed(4);
+            }
+        });
+
+        calcPixelSize.addEventListener('input', () => {
+            const px = parseFloat(calcPixelSize.value);
+            if (!isNaN(px)) {
+                calcVisionError.value = (px * 3).toFixed(4);
+            }
+        });
+    }
+
+    // ===== HARDWARE RECOMMENDATION ALGORITHM (Item 4) =====
+    const findHardwareBtn = document.getElementById('calculate-recommendation-btn');
+    const recGrid = document.getElementById('rec-grid');
+
+    if (findHardwareBtn) {
+        findHardwareBtn.addEventListener('click', () => {
+            const desiredFov = parseFloat(calcFovWidth.value);
+            const desiredWd = parseFloat(calcWorkingDistance.value);
+            const desiredAcc = parseFloat(calcVisionError.value);
+
+            if (!desiredFov || !desiredWd || !desiredAcc) {
+                alert('Vui lòng nhập FOV Width, Working Distance và Vision Accuracy dự kiến!');
+                return;
+            }
+
+            const targetPixelSize = desiredAcc / 3;
+            const requiredResWidth = desiredFov / targetPixelSize;
+
+            let recommendations = [];
+
+            // Iterate through cameras
+            cameraData.forEach(cam => {
+                const resParts = cam.resolution.split('×').map(s => parseInt(s.trim()));
+                const resW = resParts[0];
+                const resH = resParts[1];
+
+                if (resW >= requiredResWidth * 0.8) { // Allow slight tolerance
+                    const sensorStr = cam.dimensions || sensorDimensionsMap[cam.sensorSize] || '0 × 0';
+                    const sensorParts = sensorStr.split('×').map(s => parseFloat(s.trim()));
+                    const sW = sensorParts[0];
+                    const sH = sensorParts[1];
+
+                    if (sW > 0) {
+                        const recFL = (sW * desiredWd) / desiredFov;
+
+                        // Find best matching lens
+                        let bestLens = null;
+                        let minFlDiff = Infinity;
+
+                        lensData.forEach(lens => {
+                            const lensFL = parseFloat(lens.focalLength.replace(/[^\d.]/g, ''));
+                            const diff = Math.abs(lensFL - recFL);
+
+                            // Image size check
+                            const lensD = parseFloat(lens.imageSize.replace(/[^\d.]/g, '')) || 0;
+                            const camD = Math.sqrt(sW * sW + sH * sH);
+
+                            // Resolution check (Megapixel)
+                            const camMP = (resW * resH) / 1000000;
+                            const lensMP = getMPFromModel(lens.model);
+                            const resMatch = lensMP >= camMP;
+
+                            if (diff < minFlDiff && lensD >= camD * 0.9) {
+                                // Prioritize correct resolution match
+                                minFlDiff = diff;
+                                bestLens = { ...lens, mp: lensMP, resMatch: resMatch };
+                            }
+                        });
+
+                        if (bestLens) {
+                            const lensFL = parseFloat(bestLens.focalLength.replace(/[^\d.]/g, ''));
+                            const actualWd = (desiredFov * lensFL) / sW;
+                            const actualPxSize = desiredFov / resW;
+                            const actualAcc = actualPxSize * 3;
+
+                            const camMP = (resW * resH) / 1000000;
+                            const resPenalty = bestLens.resMatch ? 0 : (camMP - bestLens.mp) * 5;
+
+                            recommendations.push({
+                                camera: cam,
+                                lens: bestLens,
+                                actualWd: actualWd,
+                                actualAcc: actualAcc,
+                                score: Math.abs(actualAcc - desiredAcc) + Math.abs(actualWd - desiredWd) / 10 + resPenalty
+                            });
+                        }
+                    }
+                }
+            });
+
+            // Sort by score (lower is better) and pick top 2
+            recommendations.sort((a, b) => a.score - b.score);
+            const top2 = recommendations.slice(0, 2);
+
+            if (top2.length > 0) {
+                renderRecommendations(top2);
+            } else {
+                recGrid.innerHTML = '<div class="recommendation-card placeholder"><p>Không tìm thấy phần cứng phù hợp. Thử giảm độ chính xác hoặc thay đổi FOV/WD.</p></div>';
+            }
+        });
+    }
+
+    function renderRecommendations(recs) {
+        recGrid.innerHTML = '';
+        recs.forEach((rec, index) => {
+            const card = document.createElement('div');
+            card.className = 'recommendation-card';
+            card.innerHTML = `
+                <div class="rec-header">
+                    <span class="rec-badge">OPTION ${index + 1}</span>
+                    <i data-lucide="check-circle" style="color: var(--green); width: 16px;"></i>
+                </div>
+                <div class="rec-item">
+                    <div class="rec-icon"><i data-lucide="camera"></i></div>
+                    <div class="rec-details">
+                        <h4>${rec.camera.model}</h4>
+                        <p>${rec.camera.resolution} | ${rec.camera.sensorSize}</p>
+                    </div>
+                </div>
+                <div class="rec-item">
+                    <div class="rec-icon"><i data-lucide="aperture"></i></div>
+                    <div class="rec-details">
+                        <h4>${rec.lens.model}</h4>
+                        <p>Res: ${rec.lens.mp}MP | FL: ${rec.lens.focalLength} | ${rec.lens.imageSize}</p>
+                    </div>
+                </div>
+                <div class="rec-stats">
+                    <div class="rec-stat">
+                        <span class="rec-stat-label">Actual WD</span>
+                        <span class="rec-stat-value">${rec.actualWd.toFixed(1)} mm</span>
+                    </div>
+                    <div class="rec-stat">
+                        <span class="rec-stat-label">Accuracy</span>
+                        <span class="rec-stat-value">${rec.actualAcc.toFixed(4)} mm</span>
+                    </div>
+                    <div class="rec-stat">
+                        <span class="rec-stat-label">Match Score</span>
+                        <span class="rec-stat-value">${(100 - rec.score).toFixed(1)}%</span>
+                    </div>
+                </div>
+            `;
+            recGrid.appendChild(card);
+        });
+        lucide.createIcons();
+    }
 });

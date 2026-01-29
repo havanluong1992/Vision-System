@@ -1,273 +1,654 @@
 <!DOCTYPE html>
-<html lang="vi" id="html-lang">
+<html lang="vi">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chấm Công OT</title>
-    <meta name="description" content="Ứng dụng ghi nhận và tính giờ tăng ca tự động">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vision System | Camera Management</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1a1a2e">
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
     <div class="app-container">
-        <header>
-            <div class="header-content">
-                <div class="brand">
-                    <h1>OT Tracker</h1>
-                    <span class="author-tag">make by Mr.Lượng</span>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i data-lucide="eye"></i>
                 </div>
-                <div>
-                    <button id="lang-btn" aria-label="Chuyển đổi ngôn ngữ"><i class="fa-solid fa-globe"></i> <span
-                            id="lang-text">VN</span></button>
-                    <button id="login-btn" aria-label="Đăng nhập"><i class="fa-solid fa-user-lock"></i></button>
-                    <button id="settings-btn" aria-label="Cài đặt"><i class="fa-solid fa-gear"></i></button>
+                <span class="logo-text">VISION<span>SYSTEM</span></span>
+            </div>
+
+            <nav class="nav-links">
+                <a href="#" class="nav-item active" data-tab="cameras">
+                    <i data-lucide="camera"></i>
+                    <span>Camera Products</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="lenses">
+                    <i data-lucide="aperture"></i>
+                    <span>Lens Products</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="analytics" id="nav-calc">
+                    <i data-lucide="calculator"></i>
+                    <span>Calculation Vision</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="vision-lab">
+                    <i data-lucide="wrench"></i>
+                    <span>Vision Lab</span>
+                </a>
+                <!-- <a href="#" class="nav-item" data-tab="settings">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </a> -->
+            </nav>
+
+            <div class="system-status">
+                <div class="status-header">SYSTEM HEALTH</div>
+                <div class="status-bar-container">
+                    <div class="status-label">CPU Usage</div>
+                    <div class="status-bar">
+                        <div class="progress" style="width: 42%;"></div>
+                    </div>
+                </div>
+                <div class="status-bar-container">
+                    <div class="status-label">Memory</div>
+                    <div class="status-bar">
+                        <div class="progress" style="width: 68%;"></div>
+                    </div>
                 </div>
             </div>
-            <div class="month-selector">
-                <button id="prev-month"><i class="fa-solid fa-chevron-left"></i></button>
-                <span id="current-month-display">Tháng 1, 2026</span>
-                <button id="next-month"><i class="fa-solid fa-chevron-right"></i></button>
+        </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="mobile-toggle" id="mobile-sidebar-toggle">
+                    <i data-lucide="menu"></i>
+                </div>
+                <div class="search-container">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="search-input" placeholder="Search cameras...">
+                </div>
+                <div class="user-profile">
+                    <div class="user-info" id="user-login-trigger" style="cursor: pointer;">
+                        <span class="user-name" id="display-user-name">Login</span>
+                        <span class="user-role" id="display-user-role">Click to sign in</span>
+                    </div>
+                    <div class="avatar">
+                        <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=VisionAI&backgroundColor=0d1117&eyes=eva&mouth=smile01"
+                            alt="AI Avatar">
+                    </div>
+                    <button id="logout-btn" class="logout-btn" style="display: none;" title="Logout">
+                        <i data-lucide="log-out"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tab Content Area -->
+            <div class="tab-content-area">
+
+                <!-- Lens Products Tab -->
+                <section id="tab-lenses" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="aperture"></i> Lens Products</h1>
+                        <p>Fixed Aperture and Telecentric Lens catalog</p>
+                    </div>
+
+                    <!-- Inner Tabs for Lens Categories -->
+                    <div class="inner-tabs">
+                        <button class="inner-tab-btn active" data-lens-category="fa">Lens FA</button>
+                        <button class="inner-tab-btn" data-lens-category="tele">Lens Tele</button>
+                    </div>
+
+                    <!-- Lens FA Content -->
+                    <div id="lens-fa-content" class="lens-category-content">
+                        <div class="table-container glass-panel">
+                            <table class="data-table" id="lens-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">No.</th>
+                                        <th>Product Model</th>
+                                        <th>Focal Length</th>
+                                        <th>Image Size</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lens-tbody">
+                                    <!-- Data will be injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer">
+                            <span class="table-info">Showing <strong id="lens-showing-count">0</strong> of <strong
+                                    id="lens-total-count">0</strong> lenses</span>
+                        </div>
+                    </div>
+
+                    <!-- Lens Tele Content -->
+                    <div id="lens-tele-content" class="lens-category-content" style="display: none;">
+                        <div class="table-container glass-panel">
+                            <table class="data-table" id="tele-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">No.</th>
+                                        <th>Model Name</th>
+                                        <th>Sensor Size</th>
+                                        <th>Working Distance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tele-tbody">
+                                    <!-- Data will be injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer">
+                            <span class="table-info">Showing <strong id="tele-showing-count">0</strong> of <strong
+                                    id="tele-total-count">0</strong> lenses</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Camera List Tab -->
+                <section id="tab-cameras" class="tab-panel active">
+                    <div class="page-header">
+                        <h1><i data-lucide="camera"></i> Camera Products</h1>
+                        <p>Manage and view all camera models in the system</p>
+                    </div>
+
+                    <!-- Tab Control for Camera Categories -->
+                    <div class="inner-tabs">
+                        <button class="inner-tab-btn active" data-category="hik">HIK</button>
+                        <button class="inner-tab-btn" data-category="basler">Basler</button>
+                        <button class="inner-tab-btn" data-category="cognex">Cognex</button>
+                    </div>
+
+                    <!-- Camera Table -->
+                    <div class="table-container glass-panel">
+                        <table class="data-table" id="camera-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No.</th>
+                                    <th>Product Model</th>
+                                    <th>Resolution</th>
+                                    <th>Sensor Size</th>
+                                    <th>W × H (mm)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="camera-tbody">
+                                <!-- Data will be injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <span class="table-info">Showing <strong id="showing-count">12</strong> of <strong
+                                id="total-count">12</strong> cameras</span>
+                        <div class="pagination" id="pagination-container">
+                            <!-- Pagination buttons will be injected by JS -->
+                        </div>
+                    </div>
+                </section>
+
+
+
+                <!-- Calculation Vision Tab -->
+                <section id="tab-analytics" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="calculator"></i> Calculation Vision</h1>
+                        <p>Calculate Field of View (FOV) based on lens and camera parameters</p>
+                    </div>
+
+                    <!-- FA Lens Calculator -->
+                    <div class="calculator-container glass-panel" style="margin-bottom: 2.5rem;">
+                        <h2
+                            style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--accent);">
+                            <i data-lucide="aperture"></i> FA Lens Calculator
+                        </h2>
+                        <div class="calc-grid">
+                            <!-- Lens Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="aperture"></i> Lens Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="calc-lens-type">Lens Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="calc-lens-type" class="calc-input search-select-input"
+                                            placeholder="-- Search Lens --" autocomplete="off">
+                                        <div class="search-select-results" id="calc-lens-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-focal-length">Focal Length</label>
+                                    <input type="text" id="calc-focal-length" class="calc-input" readonly
+                                        placeholder="Auto from lens">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-image-size">Image Size</label>
+                                    <input type="text" id="calc-image-size" class="calc-input" readonly
+                                        placeholder="Auto from lens">
+                                </div>
+                                <div class="calc-row-flex">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="use-adapter-ring">
+                                        <label for="use-adapter-ring">Adapter Ring</label>
+                                    </div>
+                                    <div class="input-group-sub" id="ring-length-container" style="display: none;">
+                                        <label for="calc-ring-length">Length (mm)</label>
+                                        <input type="number" id="calc-ring-length" class="calc-input-small" value="5"
+                                            step="0.5" min="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Camera Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="calc-camera-type">Camera Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="calc-camera-type" class="calc-input search-select-input"
+                                            placeholder="-- Search Camera --" autocomplete="off">
+                                        <div class="search-select-results" id="calc-camera-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-sensor-size">Sensor Size (W×H)</label>
+                                    <input type="text" id="calc-sensor-size" class="calc-input" readonly
+                                        placeholder="Auto from camera">
+                                </div>
+                            </div>
+
+                            <!-- FOV Calculation -->
+                            <div class="calc-section calc-results">
+                                <h3><i data-lucide="scan"></i> FOV Calculation</h3>
+                                <div class="calc-row">
+                                    <label for="calc-fov-width">FOV Width (mm)</label>
+                                    <input type="number" id="calc-fov-width" class="calc-input"
+                                        placeholder="Enter or Result">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-fov-height">FOV Height (mm)</label>
+                                    <input type="text" id="calc-fov-height" class="calc-input result" readonly
+                                        placeholder="Auto calculated">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-working-distance">Working Distance (mm)</label>
+                                    <input type="number" id="calc-working-distance" class="calc-input"
+                                        placeholder="Enter or Result">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-pixel-size">Pixel Size (mm/px)</label>
+                                    <input type="number" id="calc-pixel-size" class="calc-input"
+                                        placeholder="Enter or Result">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-vision-error">Vision Accuracy (mm)</label>
+                                    <input type="number" id="calc-vision-error" class="calc-input"
+                                        placeholder="Enter desired accuracy">
+                                </div>
+                                <div class="calc-btn-group">
+                                    <button id="calc-fov-btn" class="calc-btn">
+                                        <i data-lucide="arrow-right"></i> WD → FOV
+                                    </button>
+                                    <button id="calc-wd-btn" class="calc-btn calc-btn-alt">
+                                        <i data-lucide="arrow-left"></i> FOV → WD
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hardware Recommendation Panel (Item 4) -->
+                        <div class="calc-recommendation-panel" id="hardware-recommendation">
+                            <h3
+                                style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; color: var(--green);">
+                                <i data-lucide="award"></i> Recommended Hardware Options
+                            </h3>
+                            <div class="recommendation-grid" id="rec-grid">
+                                <div class="recommendation-card placeholder">
+                                    <p>Enter WD, FOV and Accuracy to see recommendations</p>
+                                </div>
+                                <div class="recommendation-card placeholder">
+                                    <p>Suggestions will appear here based on your requirements</p>
+                                </div>
+                            </div>
+                            <button id="calculate-recommendation-btn" class="calc-btn recommendation-trigger-btn">
+                                <i data-lucide="zap"></i> Find 2 Hardware Options
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Telecentric Lens Calculator -->
+                    <div class="calculator-container glass-panel">
+                        <h2
+                            style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--purple);">
+                            <i data-lucide="focus"></i> Telecentric Lens Calculator
+                        </h2>
+                        <div class="calc-grid">
+                            <!-- Lens Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="focus"></i> Tele Lens Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="tele-calc-lens-type">Lens Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="tele-calc-lens-type"
+                                            class="calc-input search-select-input" placeholder="-- Search Tele Lens --"
+                                            autocomplete="off">
+                                        <div class="search-select-results" id="tele-calc-lens-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-magnification">Magnification (β)</label>
+                                    <input type="text" id="tele-calc-magnification" class="calc-input"
+                                        placeholder="e.g. 1.0">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-wd-range">Working Distance</label>
+                                    <input type="text" id="tele-calc-wd-range" class="calc-input" readonly
+                                        placeholder="Auto from lens">
+                                </div>
+                            </div>
+
+                            <!-- Camera Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="tele-calc-camera-type">Camera Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="tele-calc-camera-type"
+                                            class="calc-input search-select-input" placeholder="-- Search Camera --"
+                                            autocomplete="off">
+                                        <div class="search-select-results" id="tele-calc-camera-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-sensor-size">Sensor Size (W×H)</label>
+                                    <input type="text" id="tele-calc-sensor-size" class="calc-input" readonly
+                                        placeholder="Auto from camera">
+                                </div>
+                            </div>
+
+                            <!-- FOV Calculation -->
+                            <div class="calc-section calc-results"
+                                style="background: rgba(139, 92, 246, 0.05); border-color: rgba(139, 92, 246, 0.2);">
+                                <h3><i data-lucide="scan"></i> FOV Calculation</h3>
+                                <div class="calc-row">
+                                    <label>Calculation Mode</label>
+                                    <div
+                                        style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                        FOV = Sensor Size / Magnification
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-fov-width">FOV Width (mm)</label>
+                                    <input type="number" id="tele-calc-fov-width" class="calc-input"
+                                        placeholder="Enter desired FOV">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-fov-height">FOV Height (mm)</label>
+                                    <input type="text" id="tele-calc-fov-height" class="calc-input result" readonly
+                                        placeholder="Result"
+                                        style="color: var(--purple); border-color: var(--purple); background: rgba(139, 92, 246, 0.1);">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-pixel-size">Pixel Size (mm/px)</label>
+                                    <input type="number" id="tele-calc-pixel-size" class="calc-input"
+                                        placeholder="Enter or Result">
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-vision-error">Vision Accuracy (mm)</label>
+                                    <input type="number" id="tele-calc-vision-error" class="calc-input"
+                                        placeholder="Enter desired Accuracy">
+                                </div>
+                                <button id="tele-calc-fov-btn" class="calc-btn"
+                                    style="background: linear-gradient(135deg, var(--purple), var(--blue));">
+                                    <i data-lucide="calculator"></i> Calculate
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Hardware Recommendation Panel (Item 4) -->
+                        <div class="calc-recommendation-panel" id="tele-hardware-recommendation">
+                            <h3
+                                style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; color: var(--purple);">
+                                <i data-lucide="award"></i> Recommended Tele Hardware Options
+                            </h3>
+                            <div class="recommendation-grid" id="tele-rec-grid">
+                                <div class="recommendation-card placeholder">
+                                    <p>Enter FOV and Accuracy to see Telecentric recommendations</p>
+                                </div>
+                                <div class="recommendation-card placeholder">
+                                    <p>Suggestions will appear here based on your requirements</p>
+                                </div>
+                            </div>
+                            <button id="tele-calculate-recommendation-btn" class="calc-btn recommendation-trigger-btn"
+                                style="background: linear-gradient(135deg, var(--purple), var(--blue));">
+                                <i data-lucide="zap"></i> Find 2 Tele Hardware Options
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Vision Lab Tab (Consolidated) -->
+                <section id="tab-vision-lab" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="wrench"></i> Vision Lab</h1>
+                        <p>Image simulation and processing tools</p>
+                    </div>
+
+                    <!-- Inner Tabs for Vision Lab -->
+                    <div class="inner-tabs" style="margin-bottom: 2rem;">
+                        <button class="inner-tab-btn active" data-vision-tool="lighting">Lighting Simulation</button>
+                        <button class="inner-tab-btn" data-vision-tool="converter">Image Converter</button>
+                    </div>
+
+                    <!-- Lighting Sim Content -->
+                    <div id="vision-lighting-content" class="vision-tool-content">
+                        <div class="light-sim-container">
+                            <!-- Controls Sidebar -->
+                            <div class="light-controls glass-panel">
+                                <div class="control-group">
+                                    <h3><i data-lucide="upload"></i> Input Image</h3>
+                                    <div class="upload-options">
+                                        <div class="upload-area" id="light-upload-area">
+                                            <i data-lucide="image-plus"></i>
+                                            <span>Upload File</span>
+                                            <input type="file" id="light-file-input" accept="image/*"
+                                                style="display: none;">
+                                        </div>
+                                        <button class="camera-btn" id="light-camera-btn">
+                                            <i data-lucide="camera"></i>
+                                            <span>Take Photo</span>
+                                        </button>
+                                    </div>
+                                    <!-- Camera Preview Container (Hidden by default) -->
+                                    <div id="camera-preview-container" style="display: none; margin-top: 1rem;">
+                                        <video id="camera-video" autoplay playsinline
+                                            style="width: 100%; border-radius: 8px; border: 1px solid var(--accent);"></video>
+                                        <button id="camera-capture-btn" class="calc-btn" style="margin-top: 0.5rem;">
+                                            <i data-lucide="aperture"></i> Capture
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="control-group">
+                                    <h3><i data-lucide="layers"></i> Light Source</h3>
+                                    <div class="light-modes-grid">
+                                        <button class="light-mode-btn active" data-light="none"
+                                            title="Normal lighting">Normal</button>
+                                        <button class="light-mode-btn" data-light="coaxial"
+                                            title="Specular surfaces, engravings">Coaxial</button>
+                                        <button class="light-mode-btn" data-light="ring-flat"
+                                            title="General inspection, high contrast">Ring Flat</button>
+                                        <button class="light-mode-btn" data-light="darkfield"
+                                            title="Scratches, cracks, edges">Dark Field</button>
+                                        <button class="light-mode-btn" data-light="backlight"
+                                            title="Sizing, outer dimensions">Backlight</button>
+                                        <button class="light-mode-btn" data-light="dome"
+                                            title="Highly reflective, curved parts">Diffuse Dome</button>
+                                        <button class="light-mode-btn" data-light="bar"
+                                            title="Side lighting, texture">Bar Light</button>
+                                        <button class="light-mode-btn" data-light="diffuse"
+                                            title="Uniform broad lighting">Diffuse Area</button>
+                                    </div>
+                                    <div id="light-usage-tip" class="usage-tip-panel">
+                                        <span class="tip-label">Application Tip:</span>
+                                        <span id="light-tip-text">Choose a light source to see best usage
+                                            scenarios.</span>
+                                    </div>
+                                </div>
+
+                                <div class="control-group">
+                                    <h3><i data-lucide="sliders"></i> Adjustments</h3>
+                                    <div class="slider-row">
+                                        <label>Intensity</label>
+                                        <input type="range" id="light-intensity" min="0" max="200" value="100">
+                                    </div>
+                                    <div class="slider-row">
+                                        <label>Contrast / Sharpness</label>
+                                        <input type="range" id="light-contrast" min="0" max="200" value="100">
+                                    </div>
+                                    <div class="slider-row" id="threshold-container" style="display: none;">
+                                        <label>Threshold (Backlight)</label>
+                                        <input type="range" id="light-threshold" min="0" max="255" value="128">
+                                    </div>
+                                    <div class="slider-row" id="edge-container" style="display: none;">
+                                        <label>Edge Sensitivity (Dark Field)</label>
+                                        <input type="range" id="light-edge" min="0" max="100" value="30">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview Area -->
+                            <div class="light-preview-pane glass-panel">
+                                <div class="preview-wrapper" id="light-preview-wrapper">
+                                    <div class="no-image-placeholder">
+                                        <i data-lucide="image"></i>
+                                        <p>Please upload an image to start simulation</p>
+                                    </div>
+                                    <img id="light-sim-image" src="" alt="Simulated Image" style="display: none;">
+                                    <div id="light-overlay-layer"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image Converter Content -->
+                    <div id="vision-converter-content" class="vision-tool-content" style="display: none;">
+                        <div class="converter-container">
+                            <!-- Controls -->
+                            <div class="converter-controls glass-panel">
+                                <div class="control-group">
+                                    <h3><i data-lucide="upload"></i> Input Image</h3>
+                                    <div class="upload-area" id="conv-upload-area">
+                                        <i data-lucide="image-plus"></i>
+                                        <span>Select Color Image</span>
+                                        <input type="file" id="conv-file-input" accept="image/*" style="display: none;">
+                                    </div>
+                                </div>
+
+                                <div class="control-group">
+                                    <h3><i data-lucide="settings"></i> Conversion Mode</h3>
+                                    <select id="conv-mode-select" class="calc-input">
+                                        <option value="intensity">Intensity</option>
+                                        <option value="red">Red Channel</option>
+                                        <option value="green">Green Channel</option>
+                                        <option value="blue">Blue Channel</option>
+                                        <option value="hsi-i">HSI Intensity</option>
+                                        <option value="hsi-s">HSI Saturation</option>
+                                        <option value="hsi-h">HSI Hue</option>
+                                    </select>
+                                </div>
+
+                                <div class="control-group" style="margin-top: auto;">
+                                    <button id="conv-download-btn" class="calc-btn" disabled>
+                                        <i data-lucide="download"></i> Download Image
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Preview Panes -->
+                            <div class="converter-previews">
+                                <div class="preview-card glass-panel">
+                                    <div class="preview-header">ORIGINAL</div>
+                                    <div class="preview-canvas-container">
+                                        <canvas id="conv-source-canvas"></canvas>
+                                        <div class="canvas-placeholder" id="conv-source-placeholder">
+                                            <i data-lucide="image"></i>
+                                            <p>No Image</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="preview-card glass-panel highlight-border">
+                                    <div class="preview-header">CONVERTED (MONO)</div>
+                                    <div class="preview-canvas-container">
+                                        <canvas id="conv-result-canvas"></canvas>
+                                        <div class="canvas-placeholder" id="conv-result-placeholder">
+                                            <i data-lucide="cpu"></i>
+                                            <p>Waiting for conversion...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Tab
+                <section id="tab-settings" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="settings"></i> Settings</h1>
+                        <p>System configuration and preferences</p>
+                    </div>
+                    <div class="coming-soon">
+                        <i data-lucide="construction"></i>
+                        <span>Settings Module Coming Soon</span>
+                    </div>
+                </section> -->
             </div>
-        </header>
-
-        <main>
-            <!-- Summary Card -->
-            <section class="summary-card">
-                <div class="summary-item" style="border-color: var(--primary-color)">
-                    <span class="label" data-i18n="standard_work_hours">Giờ tiêu chuẩn</span>
-                    <span class="value" id="total-std">0h</span>
-                </div>
-                <div class="summary-item" style="border-color: var(--secondary-color)">
-                    <span class="label" data-i18n="total_ot">Tổng giờ OT</span>
-                    <span class="value" id="total-ot">0h</span>
-                </div>
-                <div class="summary-item" style="border-color: var(--accent-color)">
-                    <span class="label" data-i18n="meal_tickets">Phiếu ăn</span>
-                    <span class="value" id="total-meals">0</span>
-                </div>
-                <div class="summary-item" style="border-color: #f59e0b">
-                    <span class="label" data-i18n="leave_days">Nghỉ phép</span>
-                    <span class="value" id="total-leave-summary">0</span>
-                </div>
-                <div class="summary-details">
-                    <div class="summary-detail-item">
-                        <span class="lbl" data-i18n="sunday">Chủ Nhật (OT)</span>
-                        <span class="val" id="total-ot-sunday" style="color: var(--accent-color)">0h</span>
-                    </div>
-                    <div class="summary-detail-item">
-                        <span class="lbl" data-i18n="holiday_ot">Lễ (OT)</span>
-                        <span class="val" id="total-ot-holiday" style="color: #10b981">0h</span>
-                    </div>
-                    <div class="summary-detail-item">
-                        <span class="lbl">
-                            <= 22h</span>
-                                <span class="val" id="total-ot-s1">0h</span>
-                    </div>
-                    <div class="summary-detail-item">
-                        <span class="lbl">22h-24h</span>
-                        <span class="val" id="total-ot-s2">0h</span>
-                    </div>
-                    <div class="summary-detail-item">
-                        <span class="lbl">> 24h</span>
-                        <span class="val" id="total-ot-s3">0h</span>
-                    </div>
-                    <div class="summary-detail-item">
-                        <span class="lbl" data-i18n="saturday_work">Thứ 7</span>
-                        <span class="val" id="total-sat-work" style="color: #4cc9f0">0day</span>
-                    </div>
-                    <div class="summary-detail-item">
-                        <span class="lbl" data-i18n="holiday_summary">Nghỉ lễ</span>
-                        <span class="val" id="total-holiday-summary" style="color: #10b981">0day</span>
-                    </div>
-                </div>
-                <!-- Hidden/Less important stat moved or kept tiny if needed, but 3 cols might be tight. 
-                     Let's stick to 2 items prominently or change grid to 3 if space allows.
-                     Given mobile width '480px', 3 items is risky. Let's try 3 items with smaller font.
-                -->
-            </section>
-
-            <!-- Input Section -->
-            <section class="input-section glass-panel">
-                <div class="input-row-multi date-row">
-                    <div class="form-group">
-                        <label for="date-picker" data-i18n="work_day">Ngày làm việc</label>
-                        <input type="date" id="date-picker">
-                    </div>
-                </div>
-
-                <div class="input-row-multi date-row">
-                    <div class="form-group">
-                        <label for="out-date" data-i18n="checkout_day">Ngày tan ca</label>
-                        <input type="date" id="out-date" class="full-width-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="out-time" data-i18n="checkout_time">Giờ tan ca</label>
-                        <input type="time" id="out-time" class="full-width-input">
-                    </div>
-                </div>
-
-                <div class="quick-btns-row">
-                    <button id="checkin-now-btn" class="quick-btn checkin-btn">
-                        <div class="btn-icon-box"><i class="fa-solid fa-right-to-bracket"></i></div>
-                        <span data-i18n="check_in">Vào ca</span>
-                    </button>
-                    <button id="checkout-now-btn" class="quick-btn checkout-btn">
-                        <div class="btn-icon-box"><i class="fa-solid fa-right-from-bracket"></i></div>
-                        <span data-i18n="record_now">Tan ca</span>
-                    </button>
-                </div>
-                <!-- Redesigned Leave Panel (Orange Bar) -->
-                <div class="leave-panel-new">
-                    <div class="leave-toggle-box" id="leave-toggle">
-                        <div class="leave-checkbox" id="leave-checkbox-ui">
-                            <i class="fa-solid fa-check"></i>
-                        </div>
-                        <span data-i18n="leave_request">Nghỉ phép</span>
-                    </div>
-
-                    <div class="leave-input-area">
-                        <span class="input-hint" data-i18n="fill_leave_days">Số ngày</span>
-                        <input type="number" id="leave-days-input" step="0.5" min="0" max="1" placeholder="0.0">
-                    </div>
-
-                    <button id="confirm-leave-btn" class="confirm-btn" disabled
-                        style="opacity: 0.5; pointer-events: none;">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <span data-i18n="confirm">Xác nhận</span>
-                    </button>
-                </div>
-
-                <!-- Holiday Panel -->
-                <div class="leave-panel-new holiday-panel">
-                    <div class="leave-toggle-box" id="holiday-toggle">
-                        <div class="leave-checkbox" id="holiday-checkbox-ui">
-                            <i class="fa-solid fa-check"></i>
-                        </div>
-                        <span data-i18n="holiday_request">Nghỉ lễ</span>
-                    </div>
-
-                    <div class="leave-input-area">
-                        <span class="input-hint" data-i18n="fill_leave_days">Số ngày</span>
-                        <input type="number" id="holiday-days-input" step="0.5" min="0" max="1" placeholder="0.0">
-                    </div>
-
-                    <button id="confirm-holiday-btn" class="confirm-btn" disabled
-                        style="opacity: 0.5; pointer-events: none;">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <span data-i18n="confirm">Xác nhận</span>
-                    </button>
-                </div>
-
-                <div id="gps-status" class="gps-status hidden" style="width: 66%; margin: 0 0 16px 0;">
-                    <i class="fa-solid fa-location-crosshairs"></i> <span id="gps-address"></span>
-                </div>
-
-                <div class="info-row" style="flex-direction: column; align-items: stretch; gap: 10px;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span><span data-i18n="total_ot">Tổng OT</span>: <strong id="calculated-ot"
-                                class="highlight-text">--</strong></span>
-                        <span><span data-i18n="meal_tickets">Phiếu ăn</span>: <strong id="meal-ticket-display"
-                                style="color: var(--accent-color)">0</strong></span>
-                    </div>
-
-                    <div class="ot-breakdown">
-                        <div class="ot-segment">
-                            <label data-i18n="ot_17_22">17h - 22h</label>
-                            <span id="ot-seg-1">0h</span>
-                        </div>
-                        <div class="ot-segment">
-                            <label data-i18n="ot_22_24">22h - 24h</label>
-                            <span id="ot-seg-2">0h</span>
-                        </div>
-                        <div class="ot-segment">
-                            <label data-i18n="after_24h">Sau 24h</label>
-                            <span id="ot-seg-3">0h</span>
-                        </div>
-                    </div>
-                </div>
-
-            </section>
-
-            <!-- Recent Logs -->
-            <section class="logs-section">
-                <h3 data-i18n="record_history">Lịch sử chấm công</h3>
-                <div id="logs-list" class="logs-list">
-                    <!-- Log items will be injected here -->
-                    <div class="empty-state" data-i18n="no_data">Chưa có dữ liệu tháng này</div>
-                </div>
-            </section>
         </main>
-
-        <!-- Settings Modal -->
-        <div id="settings-modal" class="modal hidden">
-            <div class="modal-content glass-panel">
-                <div class="modal-header">
-                    <h3 data-i18n="settings">Cài đặt</h3>
-                    <button id="close-settings"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="setting-start-standard-time" data-i18n="std_start_time">Giờ bắt đầu tiêu
-                            chuẩn</label>
-                        <input type="time" id="setting-start-standard-time" value="08:00">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="setting-standard-time" data-i18n="std_checkout_time">Giờ tan ca tiêu chuẩn</label>
-                        <input type="time" id="setting-standard-time" value="17:00">
-                        <p class="hint" data-i18n="std_checkout_hint">Giờ kết thúc làm việc chính thức để tính OT.</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label data-i18n="attendance_data">Dữ liệu chấm công</label>
-                        <button id="export-btn" class="secondary-btn full-width"><i class="fa-solid fa-file-csv"></i>
-                            <span data-i18n="export_csv">Xuất File CSV (Tháng này)</span></button>
-                    </div>
-
-                    <button id="save-settings-btn" class="primary-btn full-width" data-i18n="save_settings">Lưu Cài
-                        Đặt</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Login Modal -->
-        <div id="login-modal" class="modal hidden">
-            <div class="modal-content glass-panel">
-                <div class="modal-header">
-                    <h3 data-i18n="login_btn">Đăng Nhập</h3>
-                    <button id="close-login"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="login-id" data-i18n="login_id">ID Đăng Nhập</label>
-                        <input type="text" id="login-id" class="full-width-input" value="Admin" placeholder="Nhập ID"
-                            data-i18n="id_placeholder">
-                    </div>
-                    <div class="form-group">
-                        <label for="login-pass" data-i18n="password">Mật Khẩu</label>
-                        <input type="password" id="login-pass" class="full-width-input" placeholder="Nhập mật khẩu"
-                            data-i18n="pass_placeholder">
-                    </div>
-                    <button id="login-submit-btn" class="primary-btn full-width" data-i18n="login_btn">Đăng
-                        Nhập</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Toast Notification -->
-        <div id="toast" class="toast hidden">Lưu thành công!</div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="login-modal">
+        <div class="login-card glass-panel">
+            <div class="login-header">
+                <i data-lucide="lock"></i>
+                <h2>Security Login</h2>
+                <p>Authorized personnel only</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>User ID</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="login-id" value="Admin" placeholder="Enter ID" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="key"></i>
+                        <input type="password" id="login-pass" placeholder="Enter Password" required>
+                    </div>
+                </div>
+                <div id="login-error" class="login-error-msg"></div>
+                <button type="submit" class="login-submit-btn">
+                    <span>Sign In</span>
+                    <i data-lucide="log-in"></i>
+                </button>
+            </form>
+            <button class="modal-close" id="close-login-btn">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 
 </html>
