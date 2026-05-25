@@ -85,6 +85,198 @@
             "dimensions": "23.04 × 23.04"
         },
         {
+            "model": "MV-CH120-15TM-M58S-NF",
+            "resolution": "4096 × 3000",
+            "sensorSize": "1.1\"",
+            "dimensions": "14.13 × 10.35"
+        },
+        {
+            "model": "MV-CH120-15TC-M58S-NF",
+            "resolution": "4096 × 3000",
+            "sensorSize": "1.1\"",
+            "dimensions": "14.13 × 10.35"
+        },
+        {
+            "model": "MV-CH250-20CM-M58S-NN",
+            "resolution": "5120 × 5120",
+            "sensorSize": "23x23mm",
+            "dimensions": "23.04 × 23.04"
+        },
+        {
+            "model": "MV-CH250-25TM-M58S-NF",
+            "resolution": "5120 × 5120",
+            "sensorSize": "23x23mm",
+            "dimensions": "23.04 × 23.04"
+        },
+        {
+            "model": "MV-CH250-25TM-F-NF",
+            "resolution": "5120 × 5120",
+            "sensorSize": "23x23mm",
+            "dimensions": "23.04 × 23.04"
+        },
+        {
+            "model": "MV-CH250-25TC-M58S-NF",
+            "resolution": "5120 × 5120",
+            "sensorSize": "23x23mm",
+            "dimensions": "23.04 × 23.04"
+        },
+        {
+            "model": "MV-CH250-60UM",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-60UC",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-90UM V4",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-90UC V4",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-90TM-M58S-NF",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-90TC-M58S-NF",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-90VM",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-90VC",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-92TM-C-NF V2",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH250-92TC-C-NF V2",
+            "resolution": "5120 × 5120",
+            "sensorSize": "1.1\"",
+            "dimensions": "12.80 × 12.80"
+        },
+        {
+            "model": "MV-CH500-90TM-M58S-NF V2",
+            "resolution": "7008 × 7000",
+            "sensorSize": "22x22mm",
+            "dimensions": "22.43 × 22.40"
+        },
+        {
+            "model": "MV-CH500-90TC-M58S-NF V2",
+            "resolution": "7008 × 7000",
+            "sensorSize": "22x22mm",
+            "dimensions": "22.43 × 22.40"
+        },
+        {
+            "model": "MV-CH500-90TM-F-NF V2",
+            "resolution": "7008 × 7000",
+            "sensorSize": "22x22mm",
+            "dimensions": "22.43 × 22.40"
+        },
+        {
+            "model": "MV-CH610-10TM-F-TF",
+            "resolution": "9568 × 6380",
+            "sensorSize": "Full Frame",
+            "dimensions": "35.96 × 23.99"
+        },
+        {
+            "model": "MV-CH610-10TC-F-TF",
+            "resolution": "9568 × 6380",
+            "sensorSize": "Full Frame",
+            "dimensions": "35.96 × 23.99"
+        },
+        {
+            "model": "MV-CH650-90TM-M58S-NF",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH650-90TC-M58S-NF",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH650-90TM-F-NF",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH650-90TC-F-NF",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH650-90TM-M58S-NF V2",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH650-90TC-M58S-NF V2",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH650-90TM-F-NF V2",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH650-90TC-F-NF V2",
+            "resolution": "9344 × 7000",
+            "sensorSize": "Large Format",
+            "dimensions": "29.90 × 22.40"
+        },
+        {
+            "model": "MV-CH1010-10CM-M72-NF",
+            "resolution": "11648 × 8740",
+            "sensorSize": "Medium Format",
+            "dimensions": "43.80 × 32.86"
+        },
+        {
+            "model": "MV-CH1010-10CM-M72-TF",
+            "resolution": "11648 × 8740",
+            "sensorSize": "Medium Format",
+            "dimensions": "43.80 × 32.86"
+        },
+        {
+            "model": "MV-CH1510-10FM-M72-TF",
+            "resolution": "14208 × 10640",
+            "sensorSize": "Large Format",
+            "dimensions": "53.42 × 40.01"
+        },
+        {
             "model": "MV-CS004-10GM",
             "resolution": "720 × 540",
             "sensorSize": "1/2.9\""
@@ -831,10 +1023,40 @@
             "dimensions": "7.20 × 5.40"
         },
         {
-            "model": "IS8505P (Polarized)",
+            "model": "IS8500P",
+            "resolution": "800 × 600",
+            "sensorSize": "1/4\"",
+            "dimensions": "2.76 × 2.07"
+        },
+        {
+            "model": "IS8501P",
+            "resolution": "1280 × 1024",
+            "sensorSize": "1/3\"",
+            "dimensions": "4.42 × 3.53"
+        },
+        {
+            "model": "IS8502P",
+            "resolution": "1920 × 1200",
+            "sensorSize": "1/1.8\"",
+            "dimensions": "6.62 × 4.14"
+        },
+        {
+            "model": "IS8502CP",
+            "resolution": "1920 × 1200",
+            "sensorSize": "1/1.8\"",
+            "dimensions": "6.62 × 4.14"
+        },
+        {
+            "model": "IS8505P",
             "resolution": "2448 × 2048",
-            "sensorSize": "1/1.1\"",
-            "dimensions": "11.30 × 11.30"
+            "sensorSize": "2/3\"",
+            "dimensions": "8.44 × 7.07"
+        },
+        {
+            "model": "IS8505CP",
+            "resolution": "2448 × 2048",
+            "sensorSize": "2/3\"",
+            "dimensions": "8.44 × 7.07"
         },
         {
             "model": "IS7500/7600/7900",
@@ -1189,9 +1411,120 @@
             "model": "MVL-KF0818M-12MP",
             "focalLength": "8 mm",
             "imageSize": "Φ16 mm (1\")"
+        },
+        {
+            "model": "MVL-AF1828M-M42B",
+            "focalLength": "18 mm",
+            "imageSize": "Φ30 mm"
+        },
+        {
+            "model": "MVL-AF2045M-M42",
+            "focalLength": "20 mm",
+            "imageSize": "Φ30 mm"
+        },
+        {
+            "model": "MVL-AF2524M-M42",
+            "focalLength": "25 mm",
+            "imageSize": "Φ29 mm"
+        },
+        {
+            "model": "MVL-AF2840M-M42",
+            "focalLength": "28 mm",
+            "imageSize": "Φ30 mm"
+        },
+        {
+            "model": "MVL-AF3528M-M42",
+            "focalLength": "35 mm",
+            "imageSize": "Φ42 mm"
+        },
+        {
+            "model": "MVL-AF3528M-M42A",
+            "focalLength": "35 mm",
+            "imageSize": "Φ29 mm"
+        },
+        {
+            "model": "MVL-AF4028M-M42",
+            "focalLength": "40 mm",
+            "imageSize": "Φ37 mm"
+        },
+        {
+            "model": "MVL-AF5028M-M42A",
+            "focalLength": "50 mm",
+            "imageSize": "Φ29 mm"
+        },
+        {
+            "model": "MVL-AF5040M-M42",
+            "focalLength": "50 mm",
+            "imageSize": "Φ37 mm"
+        },
+        {
+            "model": "MVL-LF3528M-F",
+            "focalLength": "35 mm",
+            "imageSize": "Φ43.2 mm"
+        },
+        {
+            "model": "MVL-LF3540M-F",
+            "focalLength": "35 mm",
+            "imageSize": "Φ43.2 mm"
+        },
+        {
+            "model": "MVL-LF5040M-F",
+            "focalLength": "50 mm",
+            "imageSize": "Ø56 mm"
+        },
+        {
+            "model": "MVL-LF8040M-F",
+            "focalLength": "80 mm",
+            "imageSize": "Ø56 mm"
+        },
+        {
+            "model": "MVL-LF3040M-005-M72",
+            "focalLength": "30 mm",
+            "imageSize": "Ø58 mm"
+        },
+        {
+            "model": "MVL-LF4040M-01-M72",
+            "focalLength": "40 mm",
+            "imageSize": "Ø58 mm"
+        },
+        {
+            "model": "MVL-LF6040M-013-M72",
+            "focalLength": "60 mm",
+            "imageSize": "Ø58 mm"
+        },
+        {
+            "model": "MVL-LF6040M-0168V-M72",
+            "focalLength": "60 mm",
+            "imageSize": "Φ60 mm"
+        },
+        {
+            "model": "MVL-LF8040M-021V-M72",
+            "focalLength": "80 mm",
+            "imageSize": "Ø60 mm"
+        },
+        {
+            "model": "MVL-LF2540M-M58-65MP",
+            "focalLength": "25 mm",
+            "imageSize": "Ø46 mm"
+        },
+        {
+            "model": "MVL-LF3540M-M58-65MP",
+            "focalLength": "35 mm",
+            "imageSize": "Ø42 mm"
+        },
+        {
+            "model": "MVL-LF5036M-M58-65MP",
+            "focalLength": "50 mm",
+            "imageSize": "Ø46 mm"
         }
     ],
     "teleLensData": [
+        {
+            "model": "MVL-0.5X-110",
+            "sensorSize": "1.1\"",
+            "workingDistance": "110",
+            "mag": "0.5"
+        },
         {
             "model": "MVL-1.5X",
             "sensorSize": "1\"",
@@ -1435,5 +1768,5 @@
             "workingDistance": "140 mm - Inf."
         }
     ],
-    "exportDate": "2026-04-20T14:30:41.853Z"
+    "exportDate": "2026-05-25T06:32:49.566Z"
 }

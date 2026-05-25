@@ -1440,11 +1440,16 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.reset();
     }
 
-    if (loginTrigger) {
-        loginTrigger.addEventListener('click', () => {
-            if (!isLoggedIn) showLoginModal();
-        });
-    }
+    const mobileLoginBtn = document.getElementById('mobile-login-btn');
+    const avatarTrigger = document.getElementById('user-avatar-trigger');
+
+    const triggerLogin = () => {
+        if (!isLoggedIn) showLoginModal();
+    };
+
+    if (loginTrigger) loginTrigger.addEventListener('click', triggerLogin);
+    if (mobileLoginBtn) mobileLoginBtn.addEventListener('click', triggerLogin);
+    if (avatarTrigger) avatarTrigger.addEventListener('click', triggerLogin);
 
     if (closeLoginBtn) {
         closeLoginBtn.addEventListener('click', hideLoginModal);
@@ -1480,6 +1485,9 @@ document.addEventListener('DOMContentLoaded', () => {
         navCalc.classList.remove('nav-disabled');
         if (logoutBtn) logoutBtn.style.display = 'flex';
 
+        const userProfile = document.querySelector('.user-profile');
+        if (userProfile) userProfile.classList.add('is-logged-in');
+
         // Admin specifically
         const adminControls = document.querySelectorAll('.admin-controls');
         const adminDataControls = document.querySelectorAll('.admin-data-controls');
@@ -1508,6 +1516,9 @@ document.addEventListener('DOMContentLoaded', () => {
         displayUserRole.textContent = 'Click to sign in';
         navCalc.classList.add('nav-disabled');
         if (logoutBtn) logoutBtn.style.display = 'none';
+
+        const userProfile = document.querySelector('.user-profile');
+        if (userProfile) userProfile.classList.remove('is-logged-in');
 
         const adminControls = document.querySelectorAll('.admin-controls');
         const adminDataControls = document.querySelectorAll('.admin-data-controls');

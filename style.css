@@ -111,12 +111,14 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-primary);
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 
 .app-container {
     display: flex;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
 }
 
@@ -128,6 +130,10 @@ body {
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
+    padding-left: calc(1.5rem + env(safe-area-inset-left));
+    padding-right: calc(1.5rem + env(safe-area-inset-right));
+    padding-top: calc(1.5rem + env(safe-area-inset-top));
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     z-index: 100;
 }
 
@@ -1230,8 +1236,9 @@ input[type="checkbox"] {
         position: fixed;
         left: -280px;
         height: 100vh;
+        height: 100dvh;
         transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 100;
+        z-index: 1100; /* Raised z-index to overlay dropdowns */
     }
 
     .sidebar.mobile-active {
@@ -1251,17 +1258,39 @@ input[type="checkbox"] {
         width: 100%;
         max-width: 300px;
     }
+    
+    .sidebar-overlay {
+        z-index: 1050; /* Raised to cover other elements */
+    }
 }
 
 @media (max-width: 768px) {
     .top-bar {
-        padding: 0 1rem;
-        height: 60px;
+        padding: 0.5rem 1rem;
+        height: auto;
+        min-height: 60px;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
     .search-container {
-        display: none;
-        /* Hide search on very small screens or make it an icon */
+        display: flex !important; /* Always show search bar on mobile */
+        width: 100%;
+        max-width: none;
+        order: 3; /* Move search bar to its own row below top bar */
+        margin-top: 0.25rem;
+    }
+
+    .user-profile {
+        margin-left: auto;
+    }
+
+    .mobile-login-only {
+        display: flex;
+    }
+
+    .is-logged-in .mobile-login-only {
+        display: none !important;
     }
 
     .user-info {
@@ -1271,10 +1300,26 @@ input[type="checkbox"] {
 
     .tab-content-area {
         padding: 1rem;
+        padding-left: calc(1rem + env(safe-area-inset-left));
+        padding-right: calc(1rem + env(safe-area-inset-right));
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.75rem;
     }
 
     .page-header h1 {
         font-size: 1.25rem;
+    }
+
+    .admin-controls {
+        display: flex !important;
+        justify-content: flex-start;
+        width: 100%;
+        margin-top: 0.5rem;
     }
 
     .inner-tabs {
@@ -1790,8 +1835,8 @@ input[type="checkbox"] {
     }
 }
 
-/* ===== VISION LAB MOBILE OPTIMIZATION (iPhone 16 Pro Max) ===== */
-@media (max-width: 480px) {
+/* ===== VISION LAB MOBILE OPTIMIZATION (iPhone 16 Pro Max & Tablets) ===== */
+@media (max-width: 992px) {
 
     /* Vision Lab - Lighting Simulation */
     .light-sim-container {

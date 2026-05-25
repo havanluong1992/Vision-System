@@ -104,7 +104,11 @@
                         <span class="user-name" id="display-user-name">Login</span>
                         <span class="user-role" id="display-user-role">Click to sign in</span>
                     </div>
-                    <div class="avatar">
+                    <!-- Mobile Login Button (Padlock icon) -->
+                    <button id="mobile-login-btn" class="action-btn mobile-login-only" style="width: 36px; height: 36px; border-radius: 8px; display: none; align-items: center; justify-content: center; margin-right: 0.5rem; background: rgba(0, 242, 255, 0.1); border-color: rgba(0, 242, 255, 0.2); color: var(--accent);" title="Login">
+                        <i data-lucide="lock"></i>
+                    </button>
+                    <div class="avatar" id="user-avatar-trigger" style="cursor: pointer;">
                         <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=VisionAI&backgroundColor=0d1117&eyes=eva&mouth=smile01"
                             alt="AI Avatar">
                     </div>
