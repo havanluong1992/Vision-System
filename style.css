@@ -12,6 +12,92 @@
     --green: #10b981;
     --orange: #f59e0b;
     --red: #ef4444;
+    --yellow: #eab308;
+}
+
+[data-theme="light"] {
+    --bg-dark: #f8fafc;
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-sidebar: #ffffff;
+    --accent: #2563eb;
+    --accent-glow: rgba(37, 99, 235, 0.15);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --glass-border: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .glass-panel {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .calc-input {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .calc-input[readonly] {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+[data-theme="light"] .inner-tabs {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .inner-tab-btn:hover {
+    background: #e2e8f0;
+}
+
+[data-theme="light"] .data-table th {
+    background: #f1f5f9;
+    border-bottom: 2px solid #e2e8f0;
+    color: #475569;
+}
+
+[data-theme="light"] .data-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+[data-theme="light"] .data-table tbody tr.selected-row {
+    background: #e0f2fe;
+    border-left: 2px solid var(--accent);
+}
+
+[data-theme="light"] .action-btn, [data-theme="light"] .page-btn {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+
+[data-theme="light"] .action-btn:hover, [data-theme="light"] .page-btn:hover {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+[data-theme="light"] .page-btn.active {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+[data-theme="light"] .nav-item:hover {
+    background: #f1f5f9;
+}
+
+[data-theme="light"] .search-container {
+    background: #ffffff;
+    border-color: #cbd5e1;
+}
+
+[data-theme="light"] .top-bar {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .stat-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -433,10 +519,16 @@ body {
 
 .data-table tbody tr {
     transition: background 0.2s ease;
+    cursor: pointer;
 }
 
 .data-table tbody tr:hover {
     background: rgba(0, 242, 255, 0.05);
+}
+
+.data-table tbody tr.selected-row {
+    background: rgba(0, 242, 255, 0.15);
+    border-left: 2px solid var(--accent);
 }
 
 .data-table td {

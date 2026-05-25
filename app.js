@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let processingCanvas = document.createElement('canvas');
 
     // Lens FA Data from Hikrobotics
-    const lensData = [
+    let lensData = [
         { model: 'MVL-HF0628M-6MPE', focalLength: '6 mm', imageSize: 'Ø9 mm (1/1.8\'\')' },
         { model: 'MVL-HF0828M-6MPE', focalLength: '8 mm', imageSize: 'Ø9 mm (1/1.8")' },
         { model: 'MVL-HF1228M-6MPE', focalLength: '12 mm', imageSize: 'Ø9 mm (1/1.8\'\')' },
@@ -55,8 +55,48 @@ document.addEventListener('DOMContentLoaded', () => {
         { model: 'MVL-KF2540-25MP', focalLength: '25 mm', imageSize: 'Ø19.3 mm (1.2")' },
         { model: 'MVL-KF3540-25MP', focalLength: '35 mm', imageSize: 'Ø19.3 mm (1.2\'\')' },
         { model: 'MVL-KF5040-25MP', focalLength: '50 mm', imageSize: 'Ø19.3 mm (1.2\'\')' },
-        { model: 'MVL-KF0818M-12MP', focalLength: '8 mm', imageSize: 'Φ16 mm (1")' }
+        { model: 'MVL-KF0818M-12MP', focalLength: '8 mm', imageSize: 'Φ16 mm (1")' },
+
+        // New FA Lenses - MVL-AF (Active/Autofocus Large Format series)
+        { model: 'MVL-AF1828M-M42B', focalLength: '18 mm', imageSize: 'Φ30 mm' },
+        { model: 'MVL-AF2045M-M42', focalLength: '20 mm', imageSize: 'Φ30 mm' },
+        { model: 'MVL-AF2524M-M42', focalLength: '25 mm', imageSize: 'Φ29 mm' },
+        { model: 'MVL-AF2840M-M42', focalLength: '28 mm', imageSize: 'Φ30 mm' },
+        { model: 'MVL-AF3528M-M42', focalLength: '35 mm', imageSize: 'Φ42 mm' },
+        { model: 'MVL-AF3528M-M42A', focalLength: '35 mm', imageSize: 'Φ29 mm' },
+        { model: 'MVL-AF4028M-M42', focalLength: '40 mm', imageSize: 'Φ37 mm' },
+        { model: 'MVL-AF5028M-M42A', focalLength: '50 mm', imageSize: 'Φ29 mm' },
+        { model: 'MVL-AF5040M-M42', focalLength: '50 mm', imageSize: 'Φ37 mm' },
+
+        // New FA Lenses - MVL-LF (Large Format series)
+        { model: 'MVL-LF3528M-F', focalLength: '35 mm', imageSize: 'Φ43.2 mm' },
+        { model: 'MVL-LF3540M-F', focalLength: '35 mm', imageSize: 'Φ43.2 mm' },
+        { model: 'MVL-LF5040M-F', focalLength: '50 mm', imageSize: 'Ø56 mm' },
+        { model: 'MVL-LF8040M-F', focalLength: '80 mm', imageSize: 'Ø56 mm' },
+        { model: 'MVL-LF3040M-005-M72', focalLength: '30 mm', imageSize: 'Ø58 mm' },
+        { model: 'MVL-LF4040M-01-M72', focalLength: '40 mm', imageSize: 'Ø58 mm' },
+        { model: 'MVL-LF6040M-013-M72', focalLength: '60 mm', imageSize: 'Ø58 mm' },
+        { model: 'MVL-LF6040M-0168V-M72', focalLength: '60 mm', imageSize: 'Φ60 mm' },
+        { model: 'MVL-LF8040M-021V-M72', focalLength: '80 mm', imageSize: 'Ø60 mm' },
+        { model: 'MVL-LF2540M-M58-65MP', focalLength: '25 mm', imageSize: 'Ø46 mm' },
+        { model: 'MVL-LF3540M-M58-65MP', focalLength: '35 mm', imageSize: 'Ø42 mm' },
+        { model: 'MVL-LF5036M-M58-65MP', focalLength: '50 mm', imageSize: 'Ø46 mm' }
     ];
+
+    try {
+        const savedLensData = localStorage.getItem('vision_lensData');
+        if (savedLensData) {
+            const parsed = JSON.parse(savedLensData);
+            const existingModels = new Set(parsed.map(item => item.model));
+            const newDefaults = lensData.filter(item => !existingModels.has(item.model));
+            lensData = [...parsed, ...newDefaults];
+            localStorage.setItem('vision_lensData', JSON.stringify(lensData));
+        }
+    } catch(e) {}
+
+    const saveLensData = () => {
+        localStorage.setItem('vision_lensData', JSON.stringify(lensData));
+    };
 
     // Lens Table Elements
     const lensTbody = document.getElementById('lens-tbody');
@@ -75,6 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span class="focal-badge">${lens.focalLength}</span></td>
                 <td><span class="sensor-badge">${lens.imageSize}</span></td>
             `;
+            row.addEventListener('click', () => {
+                const parentTbody = row.parentElement;
+                parentTbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                row.classList.add('selected-row');
+            });
             lensTbody.appendChild(row);
         });
         if (lensShowingCount) lensShowingCount.textContent = data.length;
@@ -85,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Telecentric Lens Data from Computar (TEC-V and TEC-M Series)
-    const teleLensData = [
+    let teleLensData = [
         // TEC-V Series (1" and 1.1" Sensor)
         { model: 'TEC-V10110MPW WI', sensorSize: '1"', workingDistance: '110.2 mm' },
         { model: 'TEC-V05110MPW WI', sensorSize: '1"', workingDistance: '110.2 mm' },
@@ -130,6 +175,21 @@ document.addEventListener('DOMContentLoaded', () => {
         { model: 'TEC-M55', sensorSize: '2/3"', workingDistance: '140 mm - Inf.' }
     ];
 
+    try {
+        const savedTeleLensData = localStorage.getItem('vision_teleLensData');
+        if (savedTeleLensData) {
+            const parsed = JSON.parse(savedTeleLensData);
+            const existingModels = new Set(parsed.map(item => item.model));
+            const newDefaults = teleLensData.filter(item => !existingModels.has(item.model));
+            teleLensData = [...parsed, ...newDefaults];
+            localStorage.setItem('vision_teleLensData', JSON.stringify(teleLensData));
+        }
+    } catch(e) {}
+
+    const saveTeleLensData = () => {
+        localStorage.setItem('vision_teleLensData', JSON.stringify(teleLensData));
+    };
+
     // Tele Lens Table Elements
     const teleTbody = document.getElementById('tele-tbody');
     const teleShowingCount = document.getElementById('tele-showing-count');
@@ -147,6 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span class="sensor-badge">${lens.sensorSize}</span></td>
                 <td><span class="dimension-badge">${lens.workingDistance}</span></td>
             `;
+            row.addEventListener('click', () => {
+                const parentTbody = row.parentElement;
+                parentTbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                row.classList.add('selected-row');
+            });
             teleTbody.appendChild(row);
         });
         if (teleShowingCount) teleShowingCount.textContent = data.length;
@@ -179,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Camera Data from Hikrobotics - CH & CS Area Scan Camera series
-    const cameraData = [
+    let cameraData = [
         // ===== CH Series (GigE High-End) =====
         { model: 'MV-CH100-60GM/GC', resolution: '4096 × 2460', sensorSize: '1"', dimensions: '14.13 × 8.49' },
         { model: 'MV-CH120-10GM/GC', resolution: '4096 × 3000', sensorSize: '1.1"', dimensions: '14.13 × 10.35' },
@@ -197,6 +262,56 @@ document.addEventListener('DOMContentLoaded', () => {
         { model: 'MV-CH089-10GM/GC', resolution: '4096 × 2160', sensorSize: '1"', dimensions: '14.13 × 7.45' },
         { model: 'MV-CH210-90YM', resolution: '5120 × 4096', sensorSize: '4/3"', dimensions: '18.43 × 14.75' },
         { model: 'MV-CH250-20XM', resolution: '5120 × 5120', sensorSize: 'APS-H', dimensions: '23.04 × 23.04' },
+
+        // CH120 - 10GigE (IMX253, 1.1" sensor)
+        { model: 'MV-CH120-15TM-M58S-NF', resolution: '4096 × 3000', sensorSize: '1.1"', dimensions: '14.13 × 10.35' },
+        { model: 'MV-CH120-15TC-M58S-NF', resolution: '4096 × 3000', sensorSize: '1.1"', dimensions: '14.13 × 10.35' },
+
+        // CH250 - PYTHON25K (23x23mm sensor)
+        { model: 'MV-CH250-20CM-M58S-NN', resolution: '5120 × 5120', sensorSize: '23x23mm', dimensions: '23.04 × 23.04' },
+        { model: 'MV-CH250-25TM-M58S-NF', resolution: '5120 × 5120', sensorSize: '23x23mm', dimensions: '23.04 × 23.04' },
+        { model: 'MV-CH250-25TM-F-NF', resolution: '5120 × 5120', sensorSize: '23x23mm', dimensions: '23.04 × 23.04' },
+        { model: 'MV-CH250-25TC-M58S-NF', resolution: '5120 × 5120', sensorSize: '23x23mm', dimensions: '23.04 × 23.04' },
+
+        // CH250 - BSI (1.1" sensor)
+        { model: 'MV-CH250-60UM', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-60UC', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+
+        // CH250 - GMAX0505 (1.1" sensor)
+        { model: 'MV-CH250-90UM V4', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-90UC V4', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-90TM-M58S-NF', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-90TC-M58S-NF', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-90VM', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-90VC', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-92TM-C-NF V2', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+        { model: 'MV-CH250-92TC-C-NF V2', resolution: '5120 × 5120', sensorSize: '1.1"', dimensions: '12.80 × 12.80' },
+
+        // CH500 - GMAX (22.4mm square sensor)
+        { model: 'MV-CH500-90TM-M58S-NF V2', resolution: '7008 × 7000', sensorSize: '22x22mm', dimensions: '22.43 × 22.40' },
+        { model: 'MV-CH500-90TC-M58S-NF V2', resolution: '7008 × 7000', sensorSize: '22x22mm', dimensions: '22.43 × 22.40' },
+        { model: 'MV-CH500-90TM-F-NF V2', resolution: '7008 × 7000', sensorSize: '22x22mm', dimensions: '22.43 × 22.40' },
+
+        // CH610 - IMX455 (Full Frame 36×24mm sensor)
+        { model: 'MV-CH610-10TM-F-TF', resolution: '9568 × 6380', sensorSize: 'Full Frame', dimensions: '35.96 × 23.99' },
+        { model: 'MV-CH610-10TC-F-TF', resolution: '9568 × 6380', sensorSize: 'Full Frame', dimensions: '35.96 × 23.99' },
+
+        // CH650 - GMAX3265 (30×22mm sensor)
+        { model: 'MV-CH650-90TM-M58S-NF', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+        { model: 'MV-CH650-90TC-M58S-NF', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+        { model: 'MV-CH650-90TM-F-NF', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+        { model: 'MV-CH650-90TC-F-NF', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+        { model: 'MV-CH650-90TM-M58S-NF V2', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+        { model: 'MV-CH650-90TC-M58S-NF V2', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+        { model: 'MV-CH650-90TM-F-NF V2', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+        { model: 'MV-CH650-90TC-F-NF V2', resolution: '9344 × 7000', sensorSize: 'Large Format', dimensions: '29.90 × 22.40' },
+
+        // CH1010 - IMX461 (Medium Format 44×33mm sensor)
+        { model: 'MV-CH1010-10CM-M72-NF', resolution: '11648 × 8740', sensorSize: 'Medium Format', dimensions: '43.80 × 32.86' },
+        { model: 'MV-CH1010-10CM-M72-TF', resolution: '11648 × 8740', sensorSize: 'Medium Format', dimensions: '43.80 × 32.86' },
+
+        // CH1510 - IMX411 (Large Format 54×40mm sensor)
+        { model: 'MV-CH1510-10FM-M72-TF', resolution: '14208 × 10640', sensorSize: 'Large Format', dimensions: '53.42 × 40.01' },
 
         // ===== CS Series (Standard) - 77 models =====
         { model: 'MV-CS004-10GM', resolution: '720 × 540', sensorSize: '1/2.9"' },
@@ -348,7 +463,14 @@ document.addEventListener('DOMContentLoaded', () => {
         { model: 'IS8401', resolution: '1280 × 1024', sensorSize: '1/1.8"', dimensions: '7.20 × 5.40' },
         { model: 'IS8402', resolution: '1600 × 1200', sensorSize: '1/1.8"', dimensions: '7.20 × 5.40' },
         { model: 'IS8405', resolution: '2592 × 1944', sensorSize: '1/1.8"', dimensions: '7.20 × 5.40' },
-        { model: 'IS8505P (Polarized)', resolution: '2448 × 2048', sensorSize: '1/1.1"', dimensions: '11.30 × 11.30' },
+        
+        // In-Sight 8500 Series (High-Performance Ultra-Compact)
+        { model: 'IS8500P', resolution: '800 × 600', sensorSize: '1/4"', dimensions: '2.76 × 2.07' },
+        { model: 'IS8501P', resolution: '1280 × 1024', sensorSize: '1/3"', dimensions: '4.42 × 3.53' },
+        { model: 'IS8502P', resolution: '1920 × 1200', sensorSize: '1/1.8"', dimensions: '6.62 × 4.14' },
+        { model: 'IS8502CP', resolution: '1920 × 1200', sensorSize: '1/1.8"', dimensions: '6.62 × 4.14' },
+        { model: 'IS8505P', resolution: '2448 × 2048', sensorSize: '2/3"', dimensions: '8.44 × 7.07' },
+        { model: 'IS8505CP', resolution: '2448 × 2048', sensorSize: '2/3"', dimensions: '8.44 × 7.07' },
 
         // In-Sight 7000 Series (Modular/Rugged)
         { model: 'IS7500/7600/7900', resolution: '640 × 480', sensorSize: '1/3"', dimensions: '4.80 × 3.60' },
@@ -375,6 +497,21 @@ document.addEventListener('DOMContentLoaded', () => {
         { model: 'IS2000-110/120/130', resolution: '640 × 480', sensorSize: '1/3"', dimensions: '4.80 × 3.60' },
         { model: 'IS1050M', resolution: '640 × 480', sensorSize: '1/3"', dimensions: '4.74 × 3.55' }
     ];
+
+    try {
+        const savedCameraData = localStorage.getItem('vision_cameraData');
+        if (savedCameraData) {
+            const parsed = JSON.parse(savedCameraData);
+            const existingModels = new Set(parsed.map(item => item.model));
+            const newDefaults = cameraData.filter(item => !existingModels.has(item.model));
+            cameraData = [...parsed, ...newDefaults];
+            localStorage.setItem('vision_cameraData', JSON.stringify(cameraData));
+        }
+    } catch(e) {}
+
+    const saveCameraData = () => {
+        localStorage.setItem('vision_cameraData', JSON.stringify(cameraData));
+    };
 
     const tbody = document.getElementById('camera-tbody');
     const searchInput = document.getElementById('search-input');
@@ -405,6 +542,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><span class="sensor-badge">${cam.sensorSize}</span></td>
                 <td><span class="dimension-badge">${dimensions}</span></td>
             `;
+            row.addEventListener('click', () => {
+                const parentTbody = row.parentElement;
+                parentTbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected-row'));
+                row.classList.add('selected-row');
+            });
             tbody.appendChild(row);
         });
 
@@ -757,7 +899,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Reusable function for searchable select (Autocomplete)
-    function initSearchableSelect(inputId, resultsId, data, onSelect) {
+    // filterFn is an optional function(item) => boolean to dynamically filter data
+    function initSearchableSelect(inputId, resultsId, data, onSelect, filterFn) {
         const input = document.getElementById(inputId);
         const results = document.getElementById(resultsId);
         if (!input || !results) return;
@@ -780,7 +923,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function renderResults(query) {
             results.innerHTML = '';
-            const filtered = data.filter(item =>
+            let pool = data;
+            // Apply dynamic filter if provided
+            if (typeof filterFn === 'function') {
+                pool = data.filter(filterFn);
+            }
+            const filtered = pool.filter(item =>
                 item.model.toLowerCase().includes(query.toLowerCase())
             ).slice(0, 50);
 
@@ -807,17 +955,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // === Camera-Lens FA Resolution Compatibility ===
+    // Track currently selected camera MP for FA calculator
+    let faSelectedCameraMP = null;
+
+    /**
+     * Returns the allowed lens MP range [min, max] for a given camera megapixel count.
+     * Rules (using adjusted thresholds for actual pixel counts vs nominal MP):
+     *   Camera ≤ 5MP   → Lens ≤ 6MP   (e.g. CS050: 2448×2048 = 5.01MP actual)
+     *   Camera 6–12MP  → Lens 8–12MP  (e.g. CU120: 4024×3036 = 12.22MP actual)
+     *   Camera ≥ 16MP  → Lens ≥ 25MP  (e.g. CS200: 5472×3648 = 19.96MP actual)
+     *
+     * Thresholds: 5.5 and 13 to avoid nominal 5MP/12MP cameras spilling into wrong tier.
+     */
+    function getAllowedLensMPRange(cameraMP) {
+        if (cameraMP <= 5.5) return [0, 6];
+        if (cameraMP <= 13) return [8, 12];
+        return [25, Infinity];
+    }
+
+    /**
+     * Check if a given FA lens is compatible with the current camera MP.
+     * If no camera is selected yet, all lenses are shown.
+     */
+    function isLensCompatibleWithCameraMP(lens, cameraMP) {
+        if (cameraMP === null || cameraMP === undefined) return true;
+        const lensMP = getMPFromModel(lens.model);
+        const [minMP, maxMP] = getAllowedLensMPRange(cameraMP);
+        return lensMP >= minMP && lensMP <= maxMP;
+    }
+
     // Initialize Searchable Selects for FA Calculator
+    // Lens list is filtered based on the currently selected camera resolution
     initSearchableSelect('calc-lens-type', 'calc-lens-results', lensData, (lens) => {
         calcFocalLength.value = lens.focalLength || '';
         calcImageSize.value = lens.imageSize || '';
         syncRingToWD();
-    });
+    }, (lens) => isLensCompatibleWithCameraMP(lens, faSelectedCameraMP));
 
     initSearchableSelect('calc-camera-type', 'calc-camera-results', cameraData, (cam) => {
         const dimensions = cam.dimensions || sensorDimensionsMap[cam.sensorSize] || 'N/A';
         calcSensorSize.value = dimensions;
         calcCameraType.dataset.currentRes = cam.resolution || '';
+
+        // Update selected camera MP and clear lens selection if incompatible
+        const resParts = cam.resolution.split('×').map(s => parseInt(s.trim()));
+        faSelectedCameraMP = (resParts[0] * resParts[1]) / 1000000;
+
+        // Clear current lens selection since compatibility may have changed
+        const calcLensType = document.getElementById('calc-lens-type');
+        if (calcLensType) {
+            const currentLensModel = calcLensType.value;
+            if (currentLensModel) {
+                const currentLens = lensData.find(l => l.model === currentLensModel);
+                if (currentLens && !isLensCompatibleWithCameraMP(currentLens, faSelectedCameraMP)) {
+                    calcLensType.value = '';
+                    calcFocalLength.value = '';
+                    calcImageSize.value = '';
+                }
+            }
+        }
     });
 
     // Calculate FOV from Working Distance (WD → FOV)
@@ -939,6 +1136,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ===== TELECENTRIC CALCULATOR =====
+    let teleSelectedCameraMP = null;
+
+    function isTeleLensCompatibleWithCameraMP(lens, cameraMP) {
+        if (cameraMP === null || cameraMP === undefined) return true;
+        const lensSensorSize = lens.sensorSize || '';
+        if (lensSensorSize.includes('2/3')) {
+            return cameraMP < 5;
+        } else if (lensSensorSize.includes('1') || lensSensorSize.includes('1.1')) {
+            return cameraMP >= 12;
+        }
+        return true;
+    }
+
     const teleCalcLensType = document.getElementById('tele-calc-lens-type');
     const teleCalcMagnification = document.getElementById('tele-calc-magnification');
     const teleCalcWdRange = document.getElementById('tele-calc-wd-range');
@@ -954,25 +1164,41 @@ document.addEventListener('DOMContentLoaded', () => {
     initSearchableSelect('tele-calc-lens-type', 'tele-calc-lens-results', teleLensData, (lens) => {
         teleCalcWdRange.value = lens.workingDistance || '';
 
-        // Try to extract magnification from model name
-        let mag = '';
-        if (lens.model.startsWith('TEC-M')) {
-            const numericPart = lens.model.substring(5, 7);
-            if (!isNaN(numericPart)) {
-                mag = (parseFloat(numericPart) / 10).toFixed(1);
+        // Try to extract magnification from model or use saved mag
+        let mag = lens.mag || '';
+        if (!mag) {
+            if (lens.model.startsWith('TEC-M')) {
+                const numericPart = lens.model.substring(5, 7);
+                if (!isNaN(numericPart)) {
+                    mag = (parseFloat(numericPart) / 10).toFixed(1);
+                }
+            } else if (lens.model.startsWith('TEC-V')) {
+                if (lens.model.includes('05')) mag = '0.5';
+                else if (lens.model.includes('03')) mag = '0.34';
+                else if (lens.model.includes('10')) mag = '1.0';
             }
-        } else if (lens.model.startsWith('TEC-V')) {
-            if (lens.model.includes('05')) mag = '0.5';
-            else if (lens.model.includes('03')) mag = '0.34';
-            else if (lens.model.includes('10')) mag = '1.0';
         }
         teleCalcMagnification.value = mag;
-    });
+    }, (lens) => isTeleLensCompatibleWithCameraMP(lens, teleSelectedCameraMP));
 
     initSearchableSelect('tele-calc-camera-type', 'tele-calc-camera-results', cameraData, (cam) => {
         const dimensions = cam.dimensions || sensorDimensionsMap[cam.sensorSize] || 'N/A';
         teleCalcSensorSize.value = dimensions;
         teleCalcCameraType.dataset.currentRes = cam.resolution || '';
+
+        // Update selected camera MP and clear lens selection if incompatible
+        const resParts = cam.resolution.split('×').map(s => parseInt(s.trim()));
+        teleSelectedCameraMP = (resParts[0] * resParts[1]) / 1000000;
+
+        const currentLensModel = teleCalcLensType.value;
+        if (currentLensModel) {
+            const currentLens = teleLensData.find(l => l.model === currentLensModel);
+            if (currentLens && !isTeleLensCompatibleWithCameraMP(currentLens, teleSelectedCameraMP)) {
+                teleCalcLensType.value = '';
+                teleCalcMagnification.value = '';
+                teleCalcWdRange.value = '';
+            }
+        }
     });
 
     // Tele FOV Calculation
@@ -1008,11 +1234,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Helper to extract Megapixel resolution from model name (e.g., -6MPE, -10MP, -25MP)
+    // Moved before first usage (used by compatibility functions above)
     function getMPFromModel(model) {
         const match = model.match(/-(\d+)MP/);
         if (match) return parseInt(match[1]);
         const matchE = model.match(/-(\d+)MPE/);
         if (matchE) return parseInt(matchE[1]);
+
+        // Large Format Autofocus (AF) and Large Format (LF) default to high resolution (25MP)
+        if (model.startsWith('MVL-AF') || model.startsWith('MVL-LF')) {
+            return 25;
+        }
 
         // Telecentric fallback patterns
         if (model.includes('10MP')) return 10;
@@ -1076,21 +1308,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         teleLensData.forEach(lens => {
                             // Try to extract mag from model or data
-                            let lensMag = 1.0;
-                            if (lens.model.startsWith('TEC-M')) {
-                                lensMag = parseFloat(lens.model.substring(5, 7)) / 10;
-                            } else if (lens.model.startsWith('TEC-V')) {
-                                if (lens.model.includes('05')) lensMag = 0.5;
-                                else if (lens.model.includes('10')) lensMag = 1.0;
-                                else if (lens.model.includes('03')) lensMag = 0.34;
+                            let lensMag = parseFloat(lens.mag);
+                            if (isNaN(lensMag)) {
+                                lensMag = 1.0;
+                                if (lens.model.startsWith('TEC-M')) {
+                                    lensMag = parseFloat(lens.model.substring(5, 7)) / 10;
+                                } else if (lens.model.startsWith('TEC-V')) {
+                                    if (lens.model.includes('05')) lensMag = 0.5;
+                                    else if (lens.model.includes('10')) lensMag = 1.0;
+                                    else if (lens.model.includes('03')) lensMag = 0.34;
+                                }
+                            }
+
+                            const camMP = (resW * resH) / 1000000;
+
+                            // Filter by tele compatibility rules
+                            if (!isTeleLensCompatibleWithCameraMP(lens, camMP)) {
+                                return;
                             }
 
                             const diff = Math.abs(lensMag - recMag);
-
-                            // Resolution check
-                            const camMP = (resW * resH) / 1000000;
                             const lensMP = getMPFromModel(lens.model);
-                            const resMatch = lensMP >= camMP;
+                            const resMatch = true; // Telecentric matching rules are already strictly enforced above
 
                             if (diff < minMagDiff) {
                                 minMagDiff = diff;
@@ -1106,20 +1345,35 @@ document.addEventListener('DOMContentLoaded', () => {
                             const camMP = (resW * resH) / 1000000;
                             const resPenalty = bestLens.resMatch ? 0 : (camMP - bestLens.mp) * 5;
 
+                            // Calculate match percentage for display (prioritizing accuracy)
+                            const accScore = Math.max(0, 100 - (Math.abs(actualAcc - desiredAcc) / desiredAcc) * 100);
+                            const fovScore = Math.max(0, 100 - (Math.abs(actualFov - desiredFov) / desiredFov) * 100);
+                            const matchPercent = accScore * 0.9 + fovScore * 0.1;
+
                             recommendations.push({
                                 camera: cam,
                                 lens: bestLens,
                                 actualWd: parseFloat(bestLens.workingDistance.replace(/[^\d.]/g, '')),
                                 actualAcc: actualAcc,
                                 actualFov: actualFov,
-                                score: Math.abs(actualAcc - desiredAcc) + Math.abs(actualFov - desiredFov) / 5 + resPenalty
+                                score: matchPercent
                             });
                         }
                     }
                 }
             });
 
-            recommendations.sort((a, b) => a.score - b.score);
+            // Lexicographical sorting: Prioritize closest accuracy first, then closest FOV
+            recommendations.sort((a, b) => {
+                const aAccDiff = Math.abs(a.actualAcc - desiredAcc);
+                const bAccDiff = Math.abs(b.actualAcc - desiredAcc);
+                if (Math.abs(aAccDiff - bAccDiff) > 0.00001) {
+                    return aAccDiff - bAccDiff; // Smaller difference is better (ascending)
+                }
+                const aFovDiff = Math.abs(a.actualFov - desiredFov);
+                const bFovDiff = Math.abs(b.actualFov - desiredFov);
+                return aFovDiff - bFovDiff; // Smaller difference is better (ascending)
+            });
             const top2 = recommendations.slice(0, 2);
 
             if (top2.length > 0) {
@@ -1165,7 +1419,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="rec-stat">
                         <span class="rec-stat-label">Score</span>
-                        <span class="rec-stat-value" style="color: var(--purple);">${(100 - rec.score).toFixed(1)}%</span>
+                        <span class="rec-stat-value" style="color: var(--purple);">${rec.score.toFixed(1)}%</span>
                     </div>
                 </div>
             `;
@@ -1196,14 +1450,18 @@ document.addEventListener('DOMContentLoaded', () => {
         closeLoginBtn.addEventListener('click', hideLoginModal);
     }
 
+    let currentUserRole = '';
+
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
 
-            if (id === 'Admin' && pass === 'dkvina1234') {
-                handleLoginSuccess();
+            if (id === 'Admin' && pass === 'dkvn123') {
+                handleLoginSuccess('Admin', 'System Architect');
+            } else if (id === 'Operator' && pass === '1') {
+                handleLoginSuccess('Operator', 'System Operator');
             } else {
                 loginError.textContent = 'Invalid ID or Password';
                 loginError.style.display = 'block';
@@ -1211,32 +1469,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function handleLoginSuccess() {
+    function handleLoginSuccess(role, roleTitle) {
         isLoggedIn = true;
+        currentUserRole = role;
         hideLoginModal();
 
         // Update UI
-        displayUserName.textContent = 'Admin';
-        displayUserRole.textContent = 'System Architect';
+        displayUserName.textContent = role;
+        displayUserRole.textContent = roleTitle;
         navCalc.classList.remove('nav-disabled');
         if (logoutBtn) logoutBtn.style.display = 'flex';
+
+        // Admin specifically
+        const adminControls = document.querySelectorAll('.admin-controls');
+        const adminDataControls = document.querySelectorAll('.admin-data-controls');
+        if (role === 'Admin') {
+            adminControls.forEach(el => el.style.display = 'flex');
+            adminDataControls.forEach(el => el.style.display = 'flex');
+        } else {
+            adminControls.forEach(el => el.style.display = 'none');
+            adminDataControls.forEach(el => el.style.display = 'none');
+        }
 
         // Success feedback
         const btn = document.querySelector('.login-submit-btn');
         btn.innerHTML = '<i data-lucide="check"></i> Success';
         lucide.createIcons();
 
-        alert('Đăng nhập thành công! Tab Calculation Vision đã được mở.');
+        alert(`Đăng nhập thành công với quyền ${role}!`);
     }
 
     function handleLogout() {
         isLoggedIn = false;
+        currentUserRole = '';
 
         // Update UI
         displayUserName.textContent = 'Login';
         displayUserRole.textContent = 'Click to sign in';
         navCalc.classList.add('nav-disabled');
         if (logoutBtn) logoutBtn.style.display = 'none';
+
+        const adminControls = document.querySelectorAll('.admin-controls');
+        const adminDataControls = document.querySelectorAll('.admin-data-controls');
+        adminControls.forEach(el => el.style.display = 'none');
+        adminDataControls.forEach(el => el.style.display = 'none');
 
         // Go back to Camera List tab if we are in calculation
         const activeTab = document.querySelector('.nav-item.active').dataset.tab;
@@ -1247,6 +1523,256 @@ document.addEventListener('DOMContentLoaded', () => {
 
         lucide.createIcons();
         alert('Bạn đã đăng xuất thành công.');
+    }
+
+    // Admin Controls: Add and Delete Products
+    const addLensBtn = document.getElementById('add-lens-btn');
+    const deleteLensBtn = document.getElementById('delete-lens-btn');
+    
+    if (addLensBtn) {
+        addLensBtn.addEventListener('click', () => {
+            const activeLensCategory = document.querySelector('.inner-tab-btn[data-lens-category].active').dataset.lensCategory;
+            const newModel = prompt('Nhập tên Product Model:', 'NEW-MODEL-01');
+            if (!newModel) return;
+            
+            if (activeLensCategory === 'fa') {
+                const focalLength = prompt('Nhập Focal Length (mm):', '16 mm') || '16 mm';
+                const imageSize = prompt('Nhập Image Size:', 'Ø11 mm (2/3")') || 'Ø11 mm (2/3")';
+                lensData.unshift({ model: newModel, focalLength: focalLength, imageSize: imageSize });
+                saveLensData();
+                renderLensTable(lensData);
+            } else {
+                const sensorSize = prompt('Nhập Sensor Size:', '2/3"') || '2/3"';
+                const workingDistance = prompt('Nhập Working Distance:', '110 mm') || '110 mm';
+                const mag = prompt('Nhập Magnification (β):', '1.0') || '1.0';
+                teleLensData.unshift({ model: newModel, sensorSize: sensorSize, workingDistance: workingDistance, mag: mag });
+                saveTeleLensData();
+                renderTeleTable(teleLensData);
+            }
+        });
+    }
+
+    if (deleteLensBtn) {
+        deleteLensBtn.addEventListener('click', () => {
+            const activeLensCategory = document.querySelector('.inner-tab-btn[data-lens-category].active').dataset.lensCategory;
+            const tbodyId = activeLensCategory === 'fa' ? 'lens-tbody' : 'tele-tbody';
+            const selectedRow = document.querySelector(`#${tbodyId} tr.selected-row`);
+            
+            if (!selectedRow) {
+                alert('Vui lòng click chọn một sản phẩm trong bảng để xóa.');
+                return;
+            }
+            
+            const modelName = selectedRow.querySelector('.model-name').textContent;
+            
+            if (confirm(`Xác nhận xóa: ${modelName}?`)) {
+                if (activeLensCategory === 'fa') {
+                    const idx = lensData.findIndex(l => l.model === modelName);
+                    if (idx !== -1) {
+                        lensData.splice(idx, 1);
+                        saveLensData();
+                    }
+                    searchInput.dispatchEvent(new Event('input'));
+                } else {
+                    const idx = teleLensData.findIndex(l => l.model === modelName);
+                    if (idx !== -1) {
+                        teleLensData.splice(idx, 1);
+                        saveTeleLensData();
+                    }
+                    searchInput.dispatchEvent(new Event('input'));
+                }
+            }
+        });
+    }
+
+    const editLensBtn = document.getElementById('edit-lens-btn');
+    if (editLensBtn) {
+        editLensBtn.addEventListener('click', () => {
+            const activeLensCategory = document.querySelector('.inner-tab-btn[data-lens-category].active').dataset.lensCategory;
+            const tbodyId = activeLensCategory === 'fa' ? 'lens-tbody' : 'tele-tbody';
+            const selectedRow = document.querySelector(`#${tbodyId} tr.selected-row`);
+            
+            if (!selectedRow) {
+                alert('Vui lòng click chọn một sản phẩm trong bảng để sửa.');
+                return;
+            }
+            
+            const modelName = selectedRow.querySelector('.model-name').textContent;
+            
+            if (activeLensCategory === 'fa') {
+                const idx = lensData.findIndex(l => l.model === modelName);
+                if (idx !== -1) {
+                    const item = lensData[idx];
+                    const newModel = prompt('Sửa Model:', item.model);
+                    if (!newModel) return;
+                    const focalLength = prompt('Sửa Focal Length (mm):', item.focalLength) || item.focalLength;
+                    const imageSize = prompt('Sửa Image Size:', item.imageSize) || item.imageSize;
+                    
+                    lensData[idx] = { model: newModel, focalLength: focalLength, imageSize: imageSize };
+                    saveLensData();
+                    renderLensTable(lensData);
+                    alert('Đã cập nhật thông số lens thành công!');
+                }
+            } else {
+                const idx = teleLensData.findIndex(l => l.model === modelName);
+                if (idx !== -1) {
+                    const item = teleLensData[idx];
+                    const newModel = prompt('Sửa Model:', item.model);
+                    if (!newModel) return;
+                    const sensorSize = prompt('Sửa Sensor Size:', item.sensorSize) || item.sensorSize;
+                    const workingDistance = prompt('Sửa Working Distance:', item.workingDistance) || item.workingDistance;
+                    const mag = prompt('Sửa Magnification (β):', item.mag || '1.0') || (item.mag || '1.0');
+                    
+                    teleLensData[idx] = { model: newModel, sensorSize: sensorSize, workingDistance: workingDistance, mag: mag };
+                    saveTeleLensData();
+                    renderTeleTable(teleLensData);
+                    alert('Đã cập nhật thông số lens thành công!');
+                }
+            }
+        });
+    }
+
+    const addCameraBtn = document.getElementById('add-camera-btn');
+    const deleteCameraBtn = document.getElementById('delete-camera-btn');
+
+    if (addCameraBtn) {
+        addCameraBtn.addEventListener('click', () => {
+            const newModel = prompt('Nhập tên Camera Model:', 'MV-CS000-NEW');
+            if (!newModel) return;
+            const res = prompt('Nhập Resolution (e.g., 1920 × 1200):', '1920 × 1200') || '1920 × 1200';
+            const sensor = prompt('Nhập Sensor Size (e.g., 1/1.8"):', '1/1.8"') || '1/1.8"';
+            cameraData.unshift({ model: newModel, resolution: res, sensorSize: sensor });
+            saveCameraData();
+            // Re-render current category
+            const activeBtn = document.querySelector('.inner-tab-btn[data-category].active');
+            if (activeBtn) activeBtn.click();
+        });
+    }
+
+    if (deleteCameraBtn) {
+        deleteCameraBtn.addEventListener('click', () => {
+            const selectedRow = document.querySelector(`#camera-tbody tr.selected-row`);
+            
+            if (!selectedRow) {
+                alert('Vui lòng click chọn một Camera trong bảng để xóa.');
+                return;
+            }
+            
+            const modelName = selectedRow.querySelector('.model-name').textContent;
+            
+            if (confirm(`Xác nhận xóa: ${modelName}?`)) {
+                const idx = cameraData.findIndex(c => c.model === modelName);
+                if (idx !== -1) {
+                    cameraData.splice(idx, 1);
+                    saveCameraData();
+                }
+                
+                if (searchInput.value) {
+                    searchInput.dispatchEvent(new Event('input'));
+                } else {
+                    const activeBtn = document.querySelector('.inner-tab-btn[data-category].active');
+                    if (activeBtn) activeBtn.click();
+                }
+            }
+        });
+    }
+
+    const editCameraBtn = document.getElementById('edit-camera-btn');
+    if (editCameraBtn) {
+        editCameraBtn.addEventListener('click', () => {
+            const selectedRow = document.querySelector(`#camera-tbody tr.selected-row`);
+            
+            if (!selectedRow) {
+                alert('Vui lòng click chọn một Camera trong bảng để sửa.');
+                return;
+            }
+            
+            const modelName = selectedRow.querySelector('.model-name').textContent;
+            const idx = cameraData.findIndex(c => c.model === modelName);
+            
+            if (idx !== -1) {
+                const item = cameraData[idx];
+                const newModel = prompt('Sửa Model:', item.model);
+                if (!newModel) return;
+                const res = prompt('Sửa Resolution (e.g., 1920 × 1200):', item.resolution) || item.resolution;
+                const sensor = prompt('Sửa Sensor Size (e.g., 1/1.8"):', item.sensorSize) || item.sensorSize;
+                const dims = prompt('Sửa W × H dimensions (mm) (e.g., 7.20 × 5.40 hoặc để trống):', item.dimensions || '') || item.dimensions || '';
+                
+                cameraData[idx] = { model: newModel, resolution: res, sensorSize: sensor, dimensions: dims };
+                saveCameraData();
+                
+                // Re-render
+                const activeBtn = document.querySelector('.inner-tab-btn[data-category].active');
+                if (activeBtn) activeBtn.click();
+                alert('Đã cập nhật thông số camera thành công!');
+            }
+        });
+    }
+
+    // Export Data (JSON)
+    const exportDataBtn = document.getElementById('export-data-btn');
+    if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', () => {
+            const fullData = {
+                cameraData: cameraData,
+                lensData: lensData,
+                teleLensData: teleLensData,
+                exportDate: new Date().toISOString()
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData, null, 4));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "vision_system_data.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+    }
+
+    // Import Data (JSON)
+    const importDataBtn = document.getElementById('import-data-btn');
+    const importDataInput = document.getElementById('import-data-input');
+    
+    if (importDataBtn && importDataInput) {
+        importDataBtn.addEventListener('click', () => {
+            importDataInput.click();
+        });
+        
+        importDataInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.cameraData && importedData.lensData && importedData.teleLensData) {
+                        if (confirm('Xác nhận nạp dữ liệu từ file? Toàn bộ dữ liệu hiện tại sẽ bị thay thế.')) {
+                            cameraData = importedData.cameraData;
+                            lensData = importedData.lensData;
+                            teleLensData = importedData.teleLensData;
+                            
+                            saveCameraData();
+                            saveLensData();
+                            saveTeleLensData();
+                            
+                            // Re-render
+                            renderTable(cameraData);
+                            renderLensTable(lensData);
+                            renderTeleTable(teleLensData);
+                            
+                            alert('Tải dữ liệu phân tích hệ thống thành công!');
+                        }
+                    } else {
+                        alert('File dữ liệu không đúng định dạng. Vui lòng chọn file JSON được xuất từ ứng dụng này.');
+                    }
+                } catch (error) {
+                    alert('Lỗi đọc file. Vui lòng chọn file JSON hợp lệ.');
+                }
+            };
+            reader.readAsText(file);
+            importDataInput.value = ''; // Reset input
+        });
     }
 
     if (logoutBtn) {
@@ -1928,15 +2454,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             const lensD = parseFloat(lens.imageSize.replace(/[^\d.]/g, '')) || 0;
                             const camD = Math.sqrt(sW * sW + sH * sH);
 
-                            // Resolution check (Megapixel)
+                            // Resolution compatibility check (strict tier matching)
                             const camMP = (resW * resH) / 1000000;
                             const lensMP = getMPFromModel(lens.model);
-                            const resMatch = lensMP >= camMP;
+                            const [minAllowedMP, maxAllowedMP] = getAllowedLensMPRange(camMP);
+                            const isCompatible = lensMP >= minAllowedMP && lensMP <= maxAllowedMP;
 
-                            if (diff < minFlDiff && lensD >= camD * 0.9) {
-                                // Prioritize correct resolution match
+                            // Only consider lenses that are resolution-compatible
+                            if (diff < minFlDiff && lensD >= camD * 0.9 && isCompatible) {
                                 minFlDiff = diff;
-                                bestLens = { ...lens, mp: lensMP, resMatch: resMatch };
+                                bestLens = { ...lens, mp: lensMP, resMatch: true };
                             }
                         });
 
@@ -2016,4 +2543,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         lucide.createIcons();
     }
+    
+    // ===== THEME TOGGLE LOGIC =====
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeIcon = document.getElementById('theme-icon');
+
+    // Check for saved theme preference or system preference
+    const savedTheme = localStorage.getItem('vision-theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.setAttribute('data-theme', 'light');
+        if (themeIcon) {
+            themeIcon.setAttribute('data-lucide', 'moon');
+        }
+    }
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.body.getAttribute('data-theme');
+            let newTheme = 'dark';
+            let iconName = 'sun';
+
+            if (currentTheme !== 'light') {
+                newTheme = 'light';
+                iconName = 'moon';
+            }
+
+            // Apply theme
+            if (newTheme === 'light') {
+                document.body.setAttribute('data-theme', 'light');
+            } else {
+                document.body.removeAttribute('data-theme');
+            }
+
+            // Save preference
+            localStorage.setItem('vision-theme', newTheme);
+
+            // Change icon
+            if (themeIcon) {
+                // Update icon inner HTML
+                themeIcon.setAttribute('data-lucide', iconName);
+                lucide.createIcons();
+            }
+        });
+    }
+
 });
+

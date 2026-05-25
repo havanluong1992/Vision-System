@@ -62,6 +62,29 @@
                         <div class="progress" style="width: 68%;"></div>
                     </div>
                 </div>
+
+                <div class="theme-toggle"
+                    style="margin-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span class="status-label" style="margin-bottom: 0;">Theme Mode</span>
+                    <button id="theme-toggle-btn" class="action-btn" title="Toggle Theme"
+                        style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; margin-right: 0;">
+                        <i data-lucide="sun" id="theme-icon"></i>
+                    </button>
+                </div>
+
+                <div class="admin-data-controls"
+                    style="display: none; margin-top: 1rem; flex-direction: column; gap: 0.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                    <span class="status-label">Data Management</span>
+                    <button id="export-data-btn" class="calc-btn"
+                        style="width: 100%; padding: 0.5rem; font-size: 0.85rem; height: auto;">
+                        <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export Data
+                    </button>
+                    <button id="import-data-btn" class="calc-btn calc-btn-alt"
+                        style="width: 100%; padding: 0.5rem; font-size: 0.85rem; height: auto;">
+                        <i data-lucide="upload" style="width: 14px; height: 14px;"></i> Import Data
+                    </button>
+                    <input type="file" id="import-data-input" accept=".json" style="display: none;">
+                </div>
             </div>
         </aside>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -96,9 +119,23 @@
 
                 <!-- Lens Products Tab -->
                 <section id="tab-lenses" class="tab-panel">
-                    <div class="page-header">
-                        <h1><i data-lucide="aperture"></i> Lens Products</h1>
-                        <p>Fixed Aperture and Telecentric Lens catalog</p>
+                    <div class="page-header"
+                        style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h1><i data-lucide="aperture"></i> Lens Products</h1>
+                            <p>Fixed Aperture and Telecentric Lens catalog</p>
+                        </div>
+                        <div class="admin-controls" style="display: none; gap: 0.5rem;">
+                            <button class="action-btn" id="add-lens-btn" title="Add Lens"
+                                style="width: 32px; height: 32px; padding: 0; background: var(--green); color: white; border-color: var(--green); display: flex; align-items: center; justify-content: center;"><i
+                                    data-lucide="plus" style="width:16px;"></i></button>
+                            <button class="action-btn" id="edit-lens-btn" title="Edit Selected Lens"
+                                style="width: 32px; height: 32px; padding: 0; background: var(--accent); color: white; border-color: var(--accent); display: flex; align-items: center; justify-content: center;"><i
+                                    data-lucide="edit-2" style="width:16px;"></i></button>
+                            <button class="action-btn" id="delete-lens-btn" title="Delete Last Lens"
+                                style="width: 32px; height: 32px; padding: 0; background: var(--yellow); color: white; border-color: var(--yellow); display: flex; align-items: center; justify-content: center;"><i
+                                    data-lucide="minus" style="width:16px;"></i></button>
+                        </div>
                     </div>
 
                     <!-- Inner Tabs for Lens Categories -->
@@ -156,9 +193,23 @@
 
                 <!-- Camera List Tab -->
                 <section id="tab-cameras" class="tab-panel active">
-                    <div class="page-header">
-                        <h1><i data-lucide="camera"></i> Camera Products</h1>
-                        <p>Manage and view all camera models in the system</p>
+                    <div class="page-header"
+                        style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h1><i data-lucide="camera"></i> Camera Products</h1>
+                            <p>Manage and view all camera models in the system</p>
+                        </div>
+                        <div class="admin-controls" style="display: none; gap: 0.5rem;">
+                            <button class="action-btn" id="add-camera-btn" title="Add Camera"
+                                style="width: 32px; height: 32px; padding: 0; background: var(--green); color: white; border-color: var(--green); display: flex; align-items: center; justify-content: center;"><i
+                                    data-lucide="plus" style="width:16px;"></i></button>
+                            <button class="action-btn" id="edit-camera-btn" title="Edit Selected Camera"
+                                style="width: 32px; height: 32px; padding: 0; background: var(--accent); color: white; border-color: var(--accent); display: flex; align-items: center; justify-content: center;"><i
+                                    data-lucide="edit-2" style="width:16px;"></i></button>
+                            <button class="action-btn" id="delete-camera-btn" title="Delete Last Camera"
+                                style="width: 32px; height: 32px; padding: 0; background: var(--yellow); color: white; border-color: var(--yellow); display: flex; align-items: center; justify-content: center;"><i
+                                    data-lucide="minus" style="width:16px;"></i></button>
+                        </div>
                     </div>
 
                     <!-- Tab Control for Camera Categories -->
@@ -211,6 +262,24 @@
                             <i data-lucide="aperture"></i> FA Lens Calculator
                         </h2>
                         <div class="calc-grid">
+                            <!-- Camera Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="calc-camera-type">Camera Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="calc-camera-type" class="calc-input search-select-input"
+                                            placeholder="-- Search Camera --" autocomplete="off">
+                                        <div class="search-select-results" id="calc-camera-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="calc-sensor-size">Sensor Size (W×H)</label>
+                                    <input type="text" id="calc-sensor-size" class="calc-input" readonly
+                                        placeholder="Auto from camera">
+                                </div>
+                            </div>
+
                             <!-- Lens Selection -->
                             <div class="calc-section">
                                 <h3><i data-lucide="aperture"></i> Lens Parameters</h3>
@@ -242,24 +311,6 @@
                                         <input type="number" id="calc-ring-length" class="calc-input-small" value="5"
                                             step="0.5" min="0">
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- Camera Selection -->
-                            <div class="calc-section">
-                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
-                                <div class="calc-row">
-                                    <label for="calc-camera-type">Camera Type</label>
-                                    <div class="search-select-container">
-                                        <input type="text" id="calc-camera-type" class="calc-input search-select-input"
-                                            placeholder="-- Search Camera --" autocomplete="off">
-                                        <div class="search-select-results" id="calc-camera-results"></div>
-                                    </div>
-                                </div>
-                                <div class="calc-row">
-                                    <label for="calc-sensor-size">Sensor Size (W×H)</label>
-                                    <input type="text" id="calc-sensor-size" class="calc-input" readonly
-                                        placeholder="Auto from camera">
                                 </div>
                             </div>
 
@@ -329,6 +380,25 @@
                             <i data-lucide="focus"></i> Telecentric Lens Calculator
                         </h2>
                         <div class="calc-grid">
+                            <!-- Camera Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="tele-calc-camera-type">Camera Type</label>
+                                    <div class="search-select-container">
+                                        <input type="text" id="tele-calc-camera-type"
+                                            class="calc-input search-select-input" placeholder="-- Search Camera --"
+                                            autocomplete="off">
+                                        <div class="search-select-results" id="tele-calc-camera-results"></div>
+                                    </div>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="tele-calc-sensor-size">Sensor Size (W×H)</label>
+                                    <input type="text" id="tele-calc-sensor-size" class="calc-input" readonly
+                                        placeholder="Auto from camera">
+                                </div>
+                            </div>
+
                             <!-- Lens Selection -->
                             <div class="calc-section">
                                 <h3><i data-lucide="focus"></i> Tele Lens Parameters</h3>
@@ -350,25 +420,6 @@
                                     <label for="tele-calc-wd-range">Working Distance</label>
                                     <input type="text" id="tele-calc-wd-range" class="calc-input" readonly
                                         placeholder="Auto from lens">
-                                </div>
-                            </div>
-
-                            <!-- Camera Selection -->
-                            <div class="calc-section">
-                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
-                                <div class="calc-row">
-                                    <label for="tele-calc-camera-type">Camera Type</label>
-                                    <div class="search-select-container">
-                                        <input type="text" id="tele-calc-camera-type"
-                                            class="calc-input search-select-input" placeholder="-- Search Camera --"
-                                            autocomplete="off">
-                                        <div class="search-select-results" id="tele-calc-camera-results"></div>
-                                    </div>
-                                </div>
-                                <div class="calc-row">
-                                    <label for="tele-calc-sensor-size">Sensor Size (W×H)</label>
-                                    <input type="text" id="tele-calc-sensor-size" class="calc-input" readonly
-                                        placeholder="Auto from camera">
                                 </div>
                             </div>
 
