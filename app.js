@@ -1494,9 +1494,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (role === 'Admin') {
             adminControls.forEach(el => el.style.display = 'flex');
             adminDataControls.forEach(el => el.style.display = 'flex');
+            const extEditBtn = document.getElementById('ext-edit-btn');
+            if (extEditBtn) extEditBtn.style.display = 'block';
         } else {
             adminControls.forEach(el => el.style.display = 'none');
             adminDataControls.forEach(el => el.style.display = 'none');
+            const extEditBtn = document.getElementById('ext-edit-btn');
+            if (extEditBtn) extEditBtn.style.display = 'none';
+        }
+
+        // Re-render EXT table if initialized
+        if (typeof renderExtTable === 'function' && extBrandSelect) {
+            renderExtTable(extBrandSelect.value);
         }
 
         // Success feedback
@@ -1524,6 +1533,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const adminDataControls = document.querySelectorAll('.admin-data-controls');
         adminControls.forEach(el => el.style.display = 'none');
         adminDataControls.forEach(el => el.style.display = 'none');
+
+        const extEditBtn = document.getElementById('ext-edit-btn');
+        if (extEditBtn) extEditBtn.style.display = 'none';
+
+        // Re-render EXT table if initialized
+        if (typeof renderExtTable === 'function' && extBrandSelect) {
+            renderExtTable(extBrandSelect.value);
+        }
 
         // Go back to Camera List tab if we are in calculation
         const activeTab = document.querySelector('.nav-item.active').dataset.tab;
@@ -2598,5 +2615,419 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ===== EXT CALCULATOR LOGIC =====
+    const extData = {
+        computar: {
+            title: "Computar lens Extension tube chart",
+            columns: ["M0814-MP2", "M1214-MP2", "M1614-MP2", "M2514-MP2", "M3514-MP", "M5018-MP2", "M7528-MP"],
+            wds: [30, 39, 51, 66, 86, 111, 145, 188, 245, 318, 414],
+            values: {
+                "M0814-MP2": { 30: 0.5, 39: 0.5 },
+                "M1214-MP2": { 30: 2, 39: 1.5, 51: 1, 66: 1, 86: 0.5 },
+                "M1614-MP2": { 30: 5, 39: 4, 51: 3, 66: 2, 86: 1.5, 111: 1, 145: 0.5, 188: 0.5 },
+                "M2514-MP2": { 30: 15, 39: 15, 51: 10, 66: 5, 86: 5, 111: 1 },
+                "M3514-MP": { 30: 25, 39: 20, 51: 15, 66: 15, 86: 10, 111: 5, 145: 5, 188: 1 },
+                "M5018-MP2": { 39: 175, 51: 90, 66: 55, 86: 35, 111: 25, 145: 15, 188: 10, 245: 10, 318: 5, 414: 2 },
+                "M7528-MP": { 30: 65, 39: 55, 51: 45, 66: 35, 86: 30, 111: 20, 145: 20, 188: 10, 245: 5 }
+            }
+        },
+        "hik-5mp": {
+            title: "HIK lens Extension tube chart 5MP",
+            columns: ["8", "12", "16", "25", "35", "50", "75"],
+            wds: [30, 39, 51, 66, 86, 111, 145, 188, 245, 318, 414],
+            values: {
+                "8": { 30: "1;2", 39: "1", 51: "1;2", 66: "1", 86: "1" },
+                "12": { 30: "not have ext" },
+                "16": { 30: "5;6;7", 39: "5", 51: "2;3", 66: "2;3", 86: "2;3", 111: "2", 145: "2", 188: "1", 245: "1", 318: "1" },
+                "25": { 30: "23;25;26;27", 51: "12", 66: "10", 86: "5", 111: "2", 145: "1;2", 188: "1;2", 245: "1;2", 318: "1;2", 414: "1" },
+                "35": { 30: "not have ext" },
+                "50": { 86: "45;50", 111: "30", 145: "25", 188: "15", 245: "5;10", 318: "5", 414: "1;2;5;7" },
+                "75": {}
+            }
+        },
+        "hik-6mp": {
+            title: "HIK lens Extension tube chart 6MP",
+            columns: ["8", "12", "16", "25", "35", "50", "75"],
+            wds: [30, 39, 51, 66, 86, 111, 145, 188, 245, 318, 414],
+            values: {
+                "8": { 30: "1;2", 39: "1;2", 51: "1", 66: "1", 86: "1", 111: "1", 145: "1", 188: "1" },
+                "12": { 30: "not have ext" },
+                "16": { 30: "3", 39: "2;3", 51: "2", 66: "1;2", 86: "1;2", 111: "1;2", 145: "1;2", 188: "1", 245: "1", 318: "1", 414: "1" },
+                "25": { 30: "EXT problem" },
+                "35": { 30: "not have ext" },
+                "50": { 51: "40", 66: "35", 86: "24", 111: "17", 145: "10;12", 188: "7;8;10", 245: "2;3;5;7", 318: "1;2;3;5;6;7", 414: "1;2;3;5;6" },
+                "75": {}
+            }
+        }
+    };
+
+    // Load custom extension values from localStorage if available
+    try {
+        const savedExtData = localStorage.getItem('vision_extData');
+        if (savedExtData) {
+            const parsed = JSON.parse(savedExtData);
+            Object.keys(parsed).forEach(brand => {
+                if (extData[brand]) {
+                    extData[brand].values = parsed[brand].values;
+                }
+            });
+        }
+    } catch(e) {
+        console.error("Failed to load saved extData:", e);
+    }
+
+    const extBrandSelect = document.getElementById('ext-brand-select');
+    const extLensSelect = document.getElementById('ext-lens-select');
+    const extWdSelect = document.getElementById('ext-wd-select');
+    const extResultDisplay = document.getElementById('ext-result-display');
+    const extResultNote = document.getElementById('ext-result-note');
+    const extInteractiveThead = document.getElementById('ext-interactive-thead');
+    const extInteractiveTbody = document.getElementById('ext-interactive-tbody');
+    const extEditBtn = document.getElementById('ext-edit-btn');
+
+    function populateLenses(brand) {
+        if (!extLensSelect) return;
+        extLensSelect.innerHTML = '';
+        const columns = extData[brand].columns;
+        columns.forEach(col => {
+            const opt = document.createElement('option');
+            opt.value = col;
+            opt.textContent = brand.startsWith('hik') ? `${col} mm` : col;
+            extLensSelect.appendChild(opt);
+        });
+    }
+
+    function populateWds(brand) {
+        if (!extWdSelect) return;
+        extWdSelect.innerHTML = '';
+        const wds = extData[brand].wds;
+        wds.forEach(wd => {
+            const opt = document.createElement('option');
+            opt.value = wd;
+            opt.textContent = `${wd} mm`;
+            extWdSelect.appendChild(opt);
+        });
+    }
+
+    function calculateExt() {
+        if (!extBrandSelect || !extLensSelect || !extWdSelect || !extResultDisplay || !extResultNote) return;
+        
+        const brand = extBrandSelect.value;
+        const lens = extLensSelect.value;
+        const wd = parseInt(extWdSelect.value, 10);
+
+        if (!brand || !lens || isNaN(wd)) {
+            extResultDisplay.textContent = '--';
+            extResultNote.textContent = 'Select parameters to calculate';
+            return;
+        }
+
+        const brandInfo = extData[brand];
+        const valMap = brandInfo.values[lens] || {};
+        const rawVal = valMap[wd];
+
+        const wrapper = document.querySelector('.ext-result-wrapper');
+
+        if (rawVal === undefined || rawVal === null || rawVal === "") {
+            extResultDisplay.textContent = 'N/A';
+            extResultDisplay.style.color = 'var(--text-secondary)';
+            extResultNote.textContent = 'This configuration is not supported (Grey Area)';
+            if (wrapper) {
+                wrapper.style.borderColor = 'var(--glass-border)';
+                wrapper.style.boxShadow = 'none';
+                wrapper.style.background = 'rgba(255, 255, 255, 0.02)';
+            }
+        } else if (rawVal === 'not have ext') {
+            extResultDisplay.textContent = 'None';
+            extResultDisplay.style.color = 'var(--orange)';
+            extResultNote.textContent = 'Extension tube cannot be used / not required for this distance';
+            if (wrapper) {
+                wrapper.style.borderColor = 'var(--orange)';
+                wrapper.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.15)';
+                wrapper.style.background = 'rgba(245, 158, 11, 0.03)';
+            }
+        } else if (rawVal === 'EXT problem') {
+            extResultDisplay.textContent = 'Error';
+            extResultDisplay.style.color = 'var(--red)';
+            extResultNote.textContent = 'Extension tube is problematic / incompatible for this setup';
+            if (wrapper) {
+                wrapper.style.borderColor = 'var(--red)';
+                wrapper.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.15)';
+                wrapper.style.background = 'rgba(239, 68, 68, 0.03)';
+            }
+        } else {
+            const thickness = typeof rawVal === 'number' ? `${rawVal} mm` : `${rawVal} mm`;
+            extResultDisplay.textContent = thickness;
+            extResultDisplay.style.color = 'var(--accent)';
+            extResultNote.textContent = `Install ${thickness} extension tube ring(s) to achieve this Working Distance`;
+            if (wrapper) {
+                wrapper.style.borderColor = 'var(--accent)';
+                wrapper.style.boxShadow = '0 0 20px var(--accent-glow)';
+                wrapper.style.background = 'rgba(0, 242, 255, 0.05)';
+            }
+        }
+    }
+
+    function saveExtData() {
+        try {
+            localStorage.setItem('vision_extData', JSON.stringify(extData));
+        } catch(e) {
+            console.error("Failed to save extData:", e);
+        }
+    }
+
+    function editSelectedExtValue() {
+        if (currentUserRole !== 'Admin') {
+            alert('Quyền Admin mới được phép chỉnh sửa.');
+            return;
+        }
+        const brand = extBrandSelect.value;
+        const lens = extLensSelect.value;
+        const wd = parseInt(extWdSelect.value, 10);
+
+        if (!brand || !lens || isNaN(wd)) {
+            alert('Vui lòng chọn Lens và WD trước.');
+            return;
+        }
+
+        const brandInfo = extData[brand];
+        const valMap = brandInfo.values[lens] || {};
+        const currentVal = valMap[wd] !== undefined ? valMap[wd] : '';
+
+        const promptMsg = `Nhập giá trị Extension mới cho:\nBrand: ${brand.toUpperCase()}\nLens: ${lens}\nWD: ${wd} mm\n\n(Ví dụ: 1;2 hoặc 5 hoặc not have ext hoặc EXT problem. Để trống để xóa/vô hiệu hóa):`;
+        const newValRaw = prompt(promptMsg, currentVal);
+
+        if (newValRaw === null) return; // User cancelled
+        const newVal = newValRaw.trim();
+
+        // Initialize lens value map if it doesn't exist
+        if (!brandInfo.values[lens]) {
+            brandInfo.values[lens] = {};
+        }
+
+        if (newVal === '') {
+            // Remove the value
+            delete brandInfo.values[lens][wd];
+        } else {
+            // Save as number if it is a valid positive number
+            if (!isNaN(newVal) && newVal !== '' && !newVal.includes(';') && !newVal.includes(',')) {
+                brandInfo.values[lens][wd] = parseFloat(newVal);
+            } else {
+                brandInfo.values[lens][wd] = newVal;
+            }
+        }
+
+        // Save to localStorage
+        saveExtData();
+
+        // Refresh UI
+        renderExtTable(brand);
+        calculateExt();
+    }
+
+    if (extEditBtn) {
+        extEditBtn.addEventListener('click', editSelectedExtValue);
+    }
+
+    function updateTableHighlight() {
+        if (!extInteractiveTbody || !extInteractiveThead || !extLensSelect || !extWdSelect) return;
+        const selectedLens = extLensSelect.value;
+        const selectedWd = extWdSelect.value;
+
+        // Remove existing highlights
+        const allCells = extInteractiveTbody.querySelectorAll('.ext-cell');
+        allCells.forEach(cell => {
+            cell.classList.remove('highlight-row', 'highlight-col', 'highlight-cell');
+            cell.style.background = '';
+            cell.style.boxShadow = '';
+            cell.style.borderColor = '';
+            cell.style.color = '';
+        });
+
+        const allRowHeaders = extInteractiveTbody.querySelectorAll('tr');
+        allRowHeaders.forEach(row => {
+            const firstCell = row.querySelector('td:first-child');
+            if (firstCell) {
+                firstCell.style.background = 'rgba(255, 255, 255, 0.02)';
+                firstCell.style.color = 'var(--text-secondary)';
+            }
+        });
+
+        const allColHeaders = extInteractiveThead.querySelectorAll('th');
+        allColHeaders.forEach(th => {
+            th.style.background = '';
+            th.style.color = '';
+        });
+
+        if (!selectedLens || !selectedWd) return;
+
+        // Highlight column header
+        const colHeader = extInteractiveThead.querySelector(`th[data-col-id="${selectedLens}"]`);
+        if (colHeader) {
+            colHeader.style.background = 'rgba(0, 242, 255, 0.15)';
+            colHeader.style.color = 'var(--accent)';
+        }
+
+        // Highlight row first column cell (WD)
+        const targetRow = extInteractiveTbody.querySelector(`tr[data-row-wd="${selectedWd}"]`);
+        if (targetRow) {
+            const rowHeader = targetRow.querySelector('td:first-child');
+            if (rowHeader) {
+                rowHeader.style.background = 'rgba(0, 242, 255, 0.15)';
+                rowHeader.style.color = 'var(--accent)';
+            }
+        }
+
+        // Highlight column cells
+        const colCells = extInteractiveTbody.querySelectorAll(`.ext-cell[data-col-id="${selectedLens}"]`);
+        colCells.forEach(cell => {
+            cell.classList.add('highlight-col');
+            cell.style.background = 'rgba(0, 242, 255, 0.02)';
+        });
+
+        // Highlight row cells
+        if (targetRow) {
+            const rowCells = targetRow.querySelectorAll('.ext-cell');
+            rowCells.forEach(cell => {
+                cell.classList.add('highlight-row');
+                cell.style.background = cell.style.background ? 'rgba(0, 242, 255, 0.04)' : 'rgba(0, 242, 255, 0.02)';
+            });
+        }
+
+        // Highlight intersection cell
+        const intersectionCell = extInteractiveTbody.querySelector(`.ext-cell[data-col-id="${selectedLens}"][data-row-wd="${selectedWd}"]`);
+        if (intersectionCell) {
+            intersectionCell.classList.add('highlight-cell');
+            intersectionCell.style.background = 'rgba(0, 242, 255, 0.2)';
+            intersectionCell.style.borderColor = 'var(--accent)';
+            intersectionCell.style.boxShadow = '0 0 10px var(--accent-glow)';
+            intersectionCell.style.color = '#fff';
+        }
+    }
+
+    function renderExtTable(brand) {
+        if (!extInteractiveThead || !extInteractiveTbody) return;
+        const brandInfo = extData[brand];
+        const columns = brandInfo.columns;
+        const wds = brandInfo.wds;
+
+        // Render Head
+        let headHtml = `<tr><th style="width: 100px; text-align: center; background: rgba(0, 242, 255, 0.05); font-weight: 600; border-bottom: 2px solid var(--glass-border); padding: 0.75rem;">WD (mm)</th>`;
+        columns.forEach(col => {
+            const displayName = brand.startsWith('hik') ? `${col} mm` : col;
+            headHtml += `<th style="text-align: center; font-weight: 600; border-bottom: 2px solid var(--glass-border); padding: 0.75rem;" data-col-id="${col}">${displayName}</th>`;
+        });
+        headHtml += '</tr>';
+        extInteractiveThead.innerHTML = headHtml;
+
+        // Render Body
+        let bodyHtml = '';
+        wds.forEach(wd => {
+            bodyHtml += `<tr data-row-wd="${wd}"><td style="text-align: center; font-weight: 600; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--glass-border); padding: 0.75rem;">${wd}</td>`;
+            columns.forEach(col => {
+                const valMap = brandInfo.values[col] || {};
+                const val = valMap[wd];
+
+                let displayVal = '';
+                let cellClass = '';
+                let style = 'text-align: center; cursor: pointer; transition: all 0.2s ease; border-bottom: 1px solid var(--glass-border); padding: 0.75rem;';
+                
+                if (val === undefined || val === null || val === "") {
+                    displayVal = '-';
+                    cellClass = 'cell-disabled';
+                    if (currentUserRole === 'Admin') {
+                        style += ' opacity: 0.45; background: rgba(255, 255, 255, 0.03); cursor: cell; border: 1px dashed var(--glass-border);';
+                    } else {
+                        style += ' opacity: 0.25; background: rgba(255, 255, 255, 0.01); cursor: not-allowed;';
+                    }
+                } else if (val === 'not have ext') {
+                    displayVal = 'No Ext';
+                    cellClass = 'cell-no-ext';
+                    style += ' color: var(--orange); font-weight: 500; background: rgba(245, 158, 11, 0.05);';
+                } else if (val === 'EXT problem') {
+                    displayVal = 'EXT Prob';
+                    cellClass = 'cell-error';
+                    style += ' color: var(--red); font-weight: 500; background: rgba(239, 68, 68, 0.05);';
+                } else {
+                    displayVal = val;
+                    cellClass = 'cell-value';
+                    style += ' color: var(--text-primary);';
+                }
+
+                bodyHtml += `<td class="ext-cell ${cellClass}" data-col-id="${col}" data-row-wd="${wd}" style="${style}">${displayVal}</td>`;
+            });
+            bodyHtml += '</tr>';
+        });
+        extInteractiveTbody.innerHTML = bodyHtml;
+
+        // Attach click & dblclick listeners to cells
+        const cells = extInteractiveTbody.querySelectorAll('.ext-cell');
+        cells.forEach(cell => {
+            const col = cell.dataset.colId;
+            const wd = cell.dataset.rowWd;
+
+            cell.addEventListener('click', () => {
+                if (currentUserRole !== 'Admin' && cell.classList.contains('cell-disabled')) return;
+
+                if (extLensSelect) extLensSelect.value = col;
+                if (extWdSelect) extWdSelect.value = wd;
+
+                updateTableHighlight();
+                calculateExt();
+            });
+
+            cell.addEventListener('dblclick', () => {
+                if (currentUserRole === 'Admin') {
+                    if (extLensSelect) extLensSelect.value = col;
+                    if (extWdSelect) extWdSelect.value = wd;
+                    updateTableHighlight();
+                    calculateExt();
+                    editSelectedExtValue();
+                }
+            });
+        });
+
+        updateTableHighlight();
+    }
+
+    function initExtCalculator() {
+        if (!extBrandSelect) return;
+
+        // Rebuild dropdowns and table when brand changes
+        extBrandSelect.addEventListener('change', () => {
+            const brand = extBrandSelect.value;
+            populateLenses(brand);
+            populateWds(brand);
+            renderExtTable(brand);
+            calculateExt();
+        });
+
+        // Calculate when lens or WD changes
+        if (extLensSelect) {
+            extLensSelect.addEventListener('change', () => {
+                updateTableHighlight();
+                calculateExt();
+            });
+        }
+
+        if (extWdSelect) {
+            extWdSelect.addEventListener('change', () => {
+                updateTableHighlight();
+                calculateExt();
+            });
+        }
+
+        // Initialize with default brand (computar)
+        const initialBrand = extBrandSelect.value || 'computar';
+        populateLenses(initialBrand);
+        populateWds(initialBrand);
+        renderExtTable(initialBrand);
+        calculateExt();
+    }
+
+    // Call init
+    initExtCalculator();
+
 });
+
 

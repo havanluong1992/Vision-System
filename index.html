@@ -38,6 +38,10 @@
                     <i data-lucide="calculator"></i>
                     <span>Calculation Vision</span>
                 </a>
+                <a href="#" class="nav-item" data-tab="ext-calc">
+                    <i data-lucide="layers"></i>
+                    <span>EXT Calculate</span>
+                </a>
                 <a href="#" class="nav-item" data-tab="vision-lab">
                     <i data-lucide="wrench"></i>
                     <span>Vision Lab</span>
@@ -648,6 +652,93 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- EXT Calculate Tab -->
+                <section id="tab-ext-calc" class="tab-panel">
+                    <div class="page-header">
+                        <h1><i data-lucide="layers"></i> EXT Calculate</h1>
+                        <p>Calculate extension tube thickness based on WD and Lens brand/series</p>
+                    </div>
+
+                    <div class="calculator-container glass-panel">
+                        <h2 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--accent);">
+                            <i data-lucide="layers"></i> EXT Calculate Selector
+                        </h2>
+                        
+                        <div class="calc-grid">
+                            <!-- Parameters Selection -->
+                            <div class="calc-section">
+                                <h3><i data-lucide="sliders"></i> Parameters</h3>
+                                <div class="calc-row">
+                                    <label for="ext-brand-select">Lens Brand / Chart</label>
+                                    <select id="ext-brand-select" class="calc-input">
+                                        <option value="computar">Computar Lens Chart</option>
+                                        <option value="hik-5mp">HIK Lens Chart (5MP)</option>
+                                        <option value="hik-6mp">HIK Lens Chart (6MP)</option>
+                                    </select>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="ext-lens-select">Lens Model / Focal Length</label>
+                                    <select id="ext-lens-select" class="calc-input">
+                                        <!-- Dynamic options -->
+                                    </select>
+                                </div>
+                                <div class="calc-row">
+                                    <label for="ext-wd-select">Working Distance (WD - mm)</label>
+                                    <select id="ext-wd-select" class="calc-input">
+                                        <!-- Dynamic options -->
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Result Display -->
+                            <div class="calc-section calc-results" style="display: flex; flex-direction: column; justify-content: center; border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+                                <h3><i data-lucide="info"></i> Calculation Result</h3>
+                                <div class="ext-result-wrapper" style="width: 100%; text-align: center; padding: 2rem 1rem; border-radius: 12px; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.15); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); margin-top: 1rem;">
+                                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Extension Tube Size</span>
+                                    <span id="ext-result-display" style="font-family: 'Orbitron', monospace; font-size: 2.75rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 15px var(--accent-glow); display: block; margin: 0.5rem 0;">--</span>
+                                    <span id="ext-result-note" style="font-size: 0.85rem; color: var(--text-secondary); display: block; min-height: 3em; line-height: 1.4;">Select parameters to calculate</span>
+                                </div>
+                                <button id="ext-edit-btn" class="calc-btn" style="display: none; margin-top: 1rem; width: 100%; background: var(--green); color: white; border-color: var(--green);">
+                                    <i data-lucide="edit-2"></i> Edit Value (Admin)
+                                </button>
+                            </div>
+                            
+                            <!-- Reference/Quick Instructions -->
+                            <div class="calc-section" style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+                                <h3><i data-lucide="help-circle"></i> Understanding Charts</h3>
+                                <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-top: 1rem;">
+                                    <div><strong style="color: var(--text-primary);">Extension tube sizes:</strong> Numbers like 0.5, 5, 10, 15 represent tube thickness in mm.</div>
+                                    <div><strong style="color: var(--text-primary);">Combined rings (HIK):</strong> Combinations like 1;2 or 5;6;7 specify multiple rings combined.</div>
+                                    <div><strong style="color: var(--text-primary);">Exceptions:</strong> "not have ext" indicates no extension tube options exist, and "EXT problem" indicates compatibility issues.</div>
+                                    <div><strong style="color: var(--text-primary);">Grey Cells:</strong> Indicates unsupported working distance (WD) for that specific lens.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Interactive Chart Preview -->
+                        <div class="ext-chart-section" style="margin-top: 2.5rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
+                            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; color: var(--accent);">
+                                <i data-lucide="grid"></i> Interactive Chart Preview
+                            </h3>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="info" style="width: 14px; height: 14px; color: var(--accent);"></i>
+                                <span>Tip: Click directly on any cell inside the chart below to auto-select and calculate!</span>
+                            </div>
+                            
+                            <div class="ext-table-container" style="overflow-x: auto; width: 100%; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(0,0,0,0.15); max-height: 500px;">
+                                <table class="data-table ext-table" id="ext-interactive-table" style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
+                                    <thead id="ext-interactive-thead">
+                                        <!-- Injected dynamically -->
+                                    </thead>
+                                    <tbody id="ext-interactive-tbody">
+                                        <!-- Injected dynamically -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
