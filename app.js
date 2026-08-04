@@ -1,5 +1,36 @@
 document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // ── Sticky catalog header: measure page-header + inner-tabs height and sync thead top ──
+    function updateStickyTabsTop() {
+        // Tab Cameras
+        const camHeader = document.querySelector('#tab-cameras .page-header');
+        const camTabs = document.querySelector('#tab-cameras .inner-tabs');
+        if (camHeader && camTabs && camHeader.offsetHeight > 0) {
+            const tabTop = camHeader.offsetHeight - 32;
+            camTabs.style.top = tabTop + 'px';
+            const theadTop = tabTop + camTabs.offsetHeight;
+            document.querySelectorAll('#tab-cameras .data-table thead th').forEach(th => {
+                th.style.top = theadTop + 'px';
+            });
+        }
+
+        // Tab Lenses
+        const lensHeader = document.querySelector('#tab-lenses .page-header');
+        const lensTabs = document.querySelector('#tab-lenses .inner-tabs');
+        if (lensHeader && lensTabs && lensHeader.offsetHeight > 0) {
+            const tabTop = lensHeader.offsetHeight - 32;
+            lensTabs.style.top = tabTop + 'px';
+            const theadTop = tabTop + lensTabs.offsetHeight;
+            document.querySelectorAll('#tab-lenses .data-table thead th').forEach(th => {
+                th.style.top = theadTop + 'px';
+            });
+        }
+    }
+    // Run after initial paint and on resize
+    requestAnimationFrame(updateStickyTabsTop);
+    window.addEventListener('resize', updateStickyTabsTop);
+
 
     // Global processing canvas for lighting simulation (shared with converter)
     let processingCanvas = document.createElement('canvas');
@@ -92,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lensData = [...parsed, ...newDefaults];
             localStorage.setItem('vision_lensData', JSON.stringify(lensData));
         }
-    } catch(e) {}
+    } catch (e) { }
 
     const saveLensData = () => {
         localStorage.setItem('vision_lensData', JSON.stringify(lensData));
@@ -184,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             teleLensData = [...parsed, ...newDefaults];
             localStorage.setItem('vision_teleLensData', JSON.stringify(teleLensData));
         }
-    } catch(e) {}
+    } catch (e) { }
 
     const saveTeleLensData = () => {
         localStorage.setItem('vision_teleLensData', JSON.stringify(teleLensData));
@@ -463,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { model: 'IS8401', resolution: '1280 × 1024', sensorSize: '1/1.8"', dimensions: '7.20 × 5.40' },
         { model: 'IS8402', resolution: '1600 × 1200', sensorSize: '1/1.8"', dimensions: '7.20 × 5.40' },
         { model: 'IS8405', resolution: '2592 × 1944', sensorSize: '1/1.8"', dimensions: '7.20 × 5.40' },
-        
+
         // In-Sight 8500 Series (High-Performance Ultra-Compact)
         { model: 'IS8500P', resolution: '800 × 600', sensorSize: '1/4"', dimensions: '2.76 × 2.07' },
         { model: 'IS8501P', resolution: '1280 × 1024', sensorSize: '1/3"', dimensions: '4.42 × 3.53' },
@@ -507,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cameraData = [...parsed, ...newDefaults];
             localStorage.setItem('vision_cameraData', JSON.stringify(cameraData));
         }
-    } catch(e) {}
+    } catch (e) { }
 
     const saveCameraData = () => {
         localStorage.setItem('vision_cameraData', JSON.stringify(cameraData));
@@ -601,12 +632,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         paginationContainer.appendChild(nextBtn);
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Initial render: Filter for HIK by default to match the active tab
     currentFilteredData = cameraData.filter(cam => cam.model.startsWith('MV-'));
     renderTable(currentFilteredData);
+
+
 
     // Search functionality
     searchInput.addEventListener('input', (e) => {
@@ -638,8 +671,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTeleTable(filteredTeleLenses);
     });
 
-    // Login State
+    // Login State Management
+    // Session-only: always start logged out on each app open/reload (no localStorage persistence)
     let isLoggedIn = false;
+    let currentUserRole = '';
+
     const navItems = document.querySelectorAll('.nav-item');
     const tabPanels = document.querySelectorAll('.tab-panel');
     const loginModal = document.getElementById('login-modal');
@@ -647,50 +683,270 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const closeLoginBtn = document.getElementById('close-login-btn');
     const loginError = document.getElementById('login-error');
-    const navCalc = document.getElementById('nav-calc');
     const displayUserName = document.getElementById('display-user-name');
     const displayUserRole = document.getElementById('display-user-role');
-    const logoutBtn = document.getElementById('logout-btn');
+    const userAvatarTrigger = document.getElementById('user-avatar-trigger');
+    const mobileLoginBtn = document.getElementById('mobile-login-btn');
 
-    // Tab Navigation (Sidebar)
+    function switchTab(targetTabId) {
+        navItems.forEach(i => i.classList.remove('active'));
+        const targetNav = document.querySelector(`.nav-item[data-tab="${targetTabId}"]`);
+        if (targetNav) targetNav.classList.add('active');
+
+        tabPanels.forEach(panel => {
+            panel.classList.remove('active');
+            if (panel.id === `tab-${targetTabId}`) {
+                panel.classList.add('active');
+            }
+        });
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            if (targetTabId === 'lenses') {
+                searchInput.placeholder = 'Search lenses...';
+            } else if (targetTabId === 'cameras') {
+                searchInput.placeholder = 'Search cameras...';
+            } else if (targetTabId === 'vision-lab') {
+                searchInput.placeholder = 'Search tools...';
+            } else {
+                searchInput.placeholder = 'Search...';
+            }
+        }
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        requestAnimationFrame(updateStickyTabsTop);
+    }
+
+
+    // ===== LANGUAGE / I18N SYSTEM =====
+    let currentLang = localStorage.getItem('vision_app_lang') || 'en';
+
+    const translations = {
+        en: {
+            navCameras: "Camera Products",
+            navLenses: "Lens Products",
+            navCalc: "Calculation Vision",
+            navExtCalc: "EXT Calculate",
+            navVisionLab: "Vision Lab",
+            themeMode: "Theme Mode",
+            dataManagement: "Data Management",
+            exportData: "Export Data",
+            importData: "Import Data",
+            searchPlaceholder: "Search cameras...",
+            loginRequired: "Login required to enable this section",
+            notLoggedIn: "Not Logged In - Click to Log In",
+            loggedInAdmin: "Logged In (Admin) - Click to Log Out",
+            logoutConfirm: "Are you sure you want to log out?"
+        },
+        vi: {
+            navCameras: "Sản Phẩm Camera",
+            navLenses: "Sản Phẩm Lens",
+            navCalc: "Tính Toán Vision",
+            navExtCalc: "Tính Vòng Nối (EXT)",
+            navVisionLab: "Phòng Thử Vision",
+            themeMode: "Giao Diện Ngày/Đêm",
+            dataManagement: "Quản Lý Dữ Liệu",
+            exportData: "Xuất Dữ Liệu",
+            importData: "Nhập Dữ Liệu",
+            searchPlaceholder: "Tìm kiếm camera...",
+            loginRequired: "Cần đăng nhập để sử dụng mục này",
+            notLoggedIn: "Chưa đăng nhập - Bấm để đăng nhập",
+            loggedInAdmin: "Đã đăng nhập (Admin) - Bấm để đăng xuất",
+            logoutConfirm: "Bạn có chắc chắn muốn đăng xuất không?"
+        }
+    };
+
+    function updateLanguageUI() {
+        const langBtnText = document.getElementById('lang-btn-text');
+        if (langBtnText) langBtnText.textContent = currentLang.toUpperCase();
+
+        const t = translations[currentLang] || translations.en;
+
+        // Nav items
+        const navCam = document.querySelector('.nav-item[data-tab="cameras"] span');
+        const navLens = document.querySelector('.nav-item[data-tab="lenses"] span');
+        const navCalc = document.querySelector('.nav-item[data-tab="analytics"] span');
+        const navExt = document.querySelector('.nav-item[data-tab="ext-calc"] span');
+        const navLab = document.querySelector('.nav-item[data-tab="vision-lab"] span');
+
+        if (navCam) navCam.textContent = t.navCameras;
+        if (navLens) navLens.textContent = t.navLenses;
+        if (navCalc) navCalc.textContent = t.navCalc;
+        if (navExt) navExt.textContent = t.navExtCalc;
+        if (navLab) navLab.textContent = t.navVisionLab;
+
+        // Search input
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+
+        // Sidebar labels
+        const themeLabel = document.querySelector('.theme-toggle .status-label');
+        if (themeLabel) themeLabel.textContent = t.themeMode;
+
+        const dataLabel = document.querySelector('.admin-data-controls .status-label');
+        if (dataLabel) dataLabel.textContent = t.dataManagement;
+
+        const exportBtn = document.getElementById('export-data-btn');
+        if (exportBtn) {
+            exportBtn.innerHTML = `<i data-lucide="download" style="width: 14px; height: 14px;"></i> ${t.exportData}`;
+        }
+
+        const importBtn = document.getElementById('import-data-btn');
+        if (importBtn) {
+            importBtn.innerHTML = `<i data-lucide="upload" style="width: 14px; height: 14px;"></i> ${t.importData}`;
+        }
+
+        updateProtectedTabsUI();
+    }
+
+    function toggleLanguage() {
+        currentLang = (currentLang === 'en') ? 'vi' : 'en';
+        localStorage.setItem('vision_app_lang', currentLang);
+        updateLanguageUI();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    const langToggleBtn = document.getElementById('lang-toggle-btn');
+    if (langToggleBtn) {
+        langToggleBtn.addEventListener('click', toggleLanguage);
+    }
+    updateLanguageUI();
+
+    function updateProtectedTabsUI() {
+        const lockBtn = document.getElementById('user-login-trigger');
+        const lockIcon = document.getElementById('lock-auth-icon');
+        const adminControls = document.querySelector('.admin-data-controls');
+        const protectedNavItems = document.querySelectorAll('.protected-nav');
+        const t = translations[currentLang] || translations.en;
+
+        if (isLoggedIn) {
+            if (lockBtn) {
+                lockBtn.title = t.loggedInAdmin;
+                lockBtn.style.background = 'rgba(34, 197, 94, 0.15)';
+                lockBtn.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+                lockBtn.style.color = '#22c55e';
+                lockBtn.style.boxShadow = '0 0 10px rgba(34, 197, 94, 0.2)';
+            }
+            if (lockIcon) {
+                lockIcon.setAttribute('data-lucide', 'lock');
+            }
+            if (adminControls) {
+                adminControls.style.display = 'flex';
+            }
+            protectedNavItems.forEach(item => {
+                item.style.display = 'flex';
+                item.style.opacity = '1';
+                item.style.pointerEvents = 'auto';
+                item.style.cursor = 'pointer';
+                item.classList.remove('disabled');
+                item.removeAttribute('title');
+            });
+        } else {
+            if (lockBtn) {
+                lockBtn.title = t.notLoggedIn;
+                lockBtn.style.background = 'rgba(249, 115, 22, 0.15)';
+                lockBtn.style.borderColor = 'rgba(249, 115, 22, 0.4)';
+                lockBtn.style.color = '#f97316';
+                lockBtn.style.boxShadow = '0 0 10px rgba(249, 115, 22, 0.15)';
+            }
+            if (lockIcon) {
+                lockIcon.setAttribute('data-lucide', 'lock-keyhole-open');
+            }
+            if (adminControls) {
+                adminControls.style.display = 'none';
+            }
+            protectedNavItems.forEach(item => {
+                item.style.display = 'flex';
+                item.style.opacity = '0.4';
+                item.style.pointerEvents = 'none';
+                item.style.cursor = 'not-allowed';
+                item.classList.add('disabled');
+                item.title = t.loginRequired;
+            });
+
+            // If a protected tab is currently active, switch back to 'cameras'
+            const activeTab = document.querySelector('.nav-item.active');
+            if (activeTab && activeTab.classList.contains('protected-nav')) {
+                switchTab('cameras');
+            }
+        }
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // Tab Navigation (Sidebar) - All tabs are 100% accessible to all users
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
-            const tabId = item.dataset.tab;
-
-            // Login check disabled - all tabs are now accessible
-            // if ((tabId === 'analytics' || tabId === 'vision-lab') && !isLoggedIn) {
-            //     showLoginModal();
-            //     return;
-            // }
-
-            navItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-
-            tabPanels.forEach(panel => {
-                panel.classList.remove('active');
-                if (panel.id === `tab-${tabId}`) {
-                    panel.classList.add('active');
-                }
-            });
-
-            // Update search placeholder based on tab
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                if (tabId === 'lenses') {
-                    searchInput.placeholder = 'Search lenses...';
-                } else if (tabId === 'cameras') {
-                    searchInput.placeholder = 'Search cameras...';
-                } else if (tabId === 'vision-lab') {
-                    searchInput.placeholder = 'Search tools...';
-                } else {
-                    searchInput.placeholder = 'Search...';
-                }
+            if (item.classList.contains('disabled') || (!isLoggedIn && item.classList.contains('protected-nav'))) {
+                return;
             }
-
-            lucide.createIcons();
+            const tabId = item.dataset.tab;
+            switchTab(tabId);
         });
     });
+
+    // Login Trigger (User Header / Avatar / Mobile Login)
+    function handleUserLoginClick() {
+        const t = translations[currentLang] || translations.en;
+        if (isLoggedIn) {
+            if (confirm(t.logoutConfirm)) {
+                isLoggedIn = false;
+                currentUserRole = '';
+                updateProtectedTabsUI();
+            }
+        } else {
+            if (loginError) {
+                loginError.textContent = '';
+                loginError.style.display = 'none';
+            }
+            if (loginModal) loginModal.style.display = 'flex';
+        }
+    }
+
+    if (loginTrigger) loginTrigger.addEventListener('click', handleUserLoginClick);
+    if (userAvatarTrigger) userAvatarTrigger.addEventListener('click', handleUserLoginClick);
+    if (mobileLoginBtn) mobileLoginBtn.addEventListener('click', handleUserLoginClick);
+
+    if (closeLoginBtn) {
+        closeLoginBtn.addEventListener('click', () => {
+            if (loginModal) loginModal.style.display = 'none';
+        });
+    }
+
+    if (loginModal) {
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.style.display = 'none';
+            }
+        });
+    }
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const idInput = document.getElementById('login-id');
+            const passInput = document.getElementById('login-pass');
+            const idVal = idInput ? idInput.value.trim() : '';
+            const passVal = passInput ? passInput.value.trim() : '';
+
+            if ((idVal === 'Admin' || idVal.length > 0) && (passVal === '123' || passVal.length > 0)) {
+                isLoggedIn = true;
+                currentUserRole = 'Admin';
+                if (loginModal) loginModal.style.display = 'none';
+                if (loginError) loginError.style.display = 'none';
+                updateProtectedTabsUI();
+            } else {
+                if (loginError) {
+                    loginError.textContent = 'Invalid Username or Password';
+                    loginError.style.display = 'block';
+                }
+            }
+        });
+    }
+
+    // Initialize Protected Tabs UI State
+    updateProtectedTabsUI();
 
     // Mobile Sidebar Logic
     const mobileToggle = document.getElementById('mobile-sidebar-toggle');
@@ -796,8 +1052,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
+            requestAnimationFrame(updateStickyTabsTop);
         });
     });
+
 
 
     // System Status Animation
@@ -858,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             calcWorkingDistance.value = chart[ringLength];
         } else {
             // Priority 2 removed: No theoretical fallback
-            alert('Lưu ý: Tổ hợp Lens và Ring này không nằm trong bảng test thực tế của HIK.');
+            alert('Note: This Lens and Ring combination is outside the standard manufacturer test chart.');
             calcWorkingDistance.value = '';
         }
     }
@@ -1034,12 +1292,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const workingDistance = parseFloat(calcWorkingDistance.value) || 0;
 
             if (!focalLength || !sensorWidth || !sensorHeight) {
-                alert('Vui lòng chọn Lens và Camera trước!');
+                alert('Please select both Lens and Camera first!');
                 return;
             }
 
             if (!workingDistance || (useAdapterRing.checked && workingDistance <= focalLength)) {
-                alert('Vui lòng nhập Working Distance hợp lệ (lớn hơn Focal Length khi dùng Adapter Ring)!');
+                alert('Please enter a valid Working Distance (must be greater than Focal Length when using an Adapter Ring)!');
                 return;
             }
 
@@ -1049,7 +1307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // STRICT HIK CHART: Magnification is defined by M = L / f
                 const ringLength = parseFloat(calcRingLength.value) || 0;
                 if (ringLength <= 0) {
-                    alert('Vui lòng chọn Ring Length từ bảng tra cứu!');
+                    alert('Please select an Extension Ring length from the lookup chart!');
                     return;
                 }
                 const mag = ringLength / focalLength;
@@ -1071,7 +1329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             calcPixelSize.value = pixelSizeVal.toFixed(4);
             calcVisionError.value = (pixelSizeVal * 3).toFixed(4);
 
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         });
     }
 
@@ -1093,12 +1351,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const fovWidth = parseFloat(calcFovWidth.value) || 0;
 
             if (!focalLength || !sensorWidth || !sensorHeight) {
-                alert('Vui lòng chọn Lens và Camera trước!');
+                alert('Please select both Lens and Camera first!');
                 return;
             }
 
             if (!fovWidth) {
-                alert('Vui lòng nhập FOV Width!');
+                alert('Please enter FOV Width!');
                 return;
             }
 
@@ -1130,7 +1388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             calcPixelSize.value = pixelSizeVal.toFixed(4);
             calcVisionError.value = (pixelSizeVal * 3).toFixed(4);
 
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         });
     }
 
@@ -1211,7 +1469,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const sensorHeight = sensorParts[1] || 0;
 
             if (!mag || !sensorWidth || !sensorHeight) {
-                alert('Vui lòng chọn Tele Lens và Camera trước!');
+                alert('Please select both Telecentric Lens and Camera first!');
                 return;
             }
 
@@ -1229,7 +1487,7 @@ document.addEventListener('DOMContentLoaded', () => {
             teleCalcPixelSize.value = pixelSizeVal.toFixed(4);
             teleCalcVisionError.value = (pixelSizeVal * 3).toFixed(4);
 
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         });
     }
 
@@ -1280,7 +1538,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const desiredAcc = parseFloat(teleCalcVisionError.value);
 
             if (!desiredFov || !desiredAcc) {
-                alert('Vui lòng nhập FOV Width và Vision Accuracy dự kiến cho hệ Telecentric!');
+                alert('Please enter expected FOV Width and Target Accuracy for the Telecentric system!');
                 return;
             }
 
@@ -1379,7 +1637,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (top2.length > 0) {
                 renderTeleRecommendations(top2);
             } else {
-                teleRecGrid.innerHTML = '<div class="recommendation-card placeholder"><p>Không tìm thấy phần cứng Tele phù hợp.</p></div>';
+                teleRecGrid.innerHTML = '<div class="recommendation-card placeholder"><p>No matching Telecentric hardware configuration found.</p></div>';
             }
         });
     }
@@ -1422,157 +1680,56 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="rec-stat-value" style="color: var(--purple);">${rec.score.toFixed(1)}%</span>
                     </div>
                 </div>
+                <button class="action-btn view-tele-rec-3d-btn" style="margin-top: 0.75rem; width: 100%; justify-content: center; gap: 0.5rem; background: rgba(139, 92, 246, 0.15); border-color: var(--purple); color: var(--purple); font-weight: 500;">
+                    <i data-lucide="box"></i> Simulate 3D Telecentric Concept
+                </button>
             `;
+            const btn3d = card.querySelector('.view-tele-rec-3d-btn');
+            if (btn3d) {
+                btn3d.addEventListener('click', () => {
+                    const wdRange = rec.lens.workingDistance || '100';
+                    const wdVal = parseFloat(wdRange.replace(/[^\d.]/g, '')) || 100;
+                    open3DConceptModal({
+                        cameraName: rec.camera.model,
+                        sensorSize: rec.camera.sensorSize,
+                        lensName: rec.lens.model + ' (Telecentric)',
+                        focalLength: 'β=' + (rec.lens.mag || '1.0') + 'x',
+                        extensionLength: 0,
+                        workingDistance: wdVal,
+                        fovWidth: rec.actualFov,
+                        fovHeight: rec.actualFov * 0.75,
+                        pixelSize: rec.actualAcc / 3,
+                        isTelecentric: true
+                    });
+                });
+            }
             teleRecGrid.appendChild(card);
         });
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    // Login Functions
-    function showLoginModal() {
-        loginModal.classList.add('active');
-        document.getElementById('login-id').focus();
-    }
 
-    function hideLoginModal() {
-        loginModal.classList.remove('active');
-        loginError.style.display = 'none';
-        loginForm.reset();
-    }
-
-    const mobileLoginBtn = document.getElementById('mobile-login-btn');
-    const avatarTrigger = document.getElementById('user-avatar-trigger');
-
-    const triggerLogin = () => {
-        if (!isLoggedIn) showLoginModal();
-    };
-
-    if (loginTrigger) loginTrigger.addEventListener('click', triggerLogin);
-    if (mobileLoginBtn) mobileLoginBtn.addEventListener('click', triggerLogin);
-    if (avatarTrigger) avatarTrigger.addEventListener('click', triggerLogin);
-
-    if (closeLoginBtn) {
-        closeLoginBtn.addEventListener('click', hideLoginModal);
-    }
-
-    let currentUserRole = '';
-
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const id = document.getElementById('login-id').value;
-            const pass = document.getElementById('login-pass').value;
-
-            if (id === 'Admin' && pass === 'dkvn123') {
-                handleLoginSuccess('Admin', 'System Architect');
-            } else if (id === 'Operator' && pass === '1') {
-                handleLoginSuccess('Operator', 'System Operator');
-            } else {
-                loginError.textContent = 'Invalid ID or Password';
-                loginError.style.display = 'block';
-            }
-        });
-    }
-
-    function handleLoginSuccess(role, roleTitle) {
-        isLoggedIn = true;
-        currentUserRole = role;
-        hideLoginModal();
-
-        // Update UI
-        displayUserName.textContent = role;
-        displayUserRole.textContent = roleTitle;
-        navCalc.classList.remove('nav-disabled');
-        if (logoutBtn) logoutBtn.style.display = 'flex';
-
-        const userProfile = document.querySelector('.user-profile');
-        if (userProfile) userProfile.classList.add('is-logged-in');
-
-        // Admin specifically
-        const adminControls = document.querySelectorAll('.admin-controls');
-        const adminDataControls = document.querySelectorAll('.admin-data-controls');
-        if (role === 'Admin') {
-            adminControls.forEach(el => el.style.display = 'flex');
-            adminDataControls.forEach(el => el.style.display = 'flex');
-            const extEditBtn = document.getElementById('ext-edit-btn');
-            if (extEditBtn) extEditBtn.style.display = 'block';
-        } else {
-            adminControls.forEach(el => el.style.display = 'none');
-            adminDataControls.forEach(el => el.style.display = 'none');
-            const extEditBtn = document.getElementById('ext-edit-btn');
-            if (extEditBtn) extEditBtn.style.display = 'none';
-        }
-
-        // Re-render EXT table if initialized
-        if (typeof renderExtTable === 'function' && extBrandSelect) {
-            renderExtTable(extBrandSelect.value);
-        }
-
-        // Success feedback
-        const btn = document.querySelector('.login-submit-btn');
-        btn.innerHTML = '<i data-lucide="check"></i> Success';
-        lucide.createIcons();
-
-        alert(`Đăng nhập thành công với quyền ${role}!`);
-    }
-
-    function handleLogout() {
-        isLoggedIn = false;
-        currentUserRole = '';
-
-        // Update UI
-        displayUserName.textContent = 'Login';
-        displayUserRole.textContent = 'Click to sign in';
-        navCalc.classList.add('nav-disabled');
-        if (logoutBtn) logoutBtn.style.display = 'none';
-
-        const userProfile = document.querySelector('.user-profile');
-        if (userProfile) userProfile.classList.remove('is-logged-in');
-
-        const adminControls = document.querySelectorAll('.admin-controls');
-        const adminDataControls = document.querySelectorAll('.admin-data-controls');
-        adminControls.forEach(el => el.style.display = 'none');
-        adminDataControls.forEach(el => el.style.display = 'none');
-
-        const extEditBtn = document.getElementById('ext-edit-btn');
-        if (extEditBtn) extEditBtn.style.display = 'none';
-
-        // Re-render EXT table if initialized
-        if (typeof renderExtTable === 'function' && extBrandSelect) {
-            renderExtTable(extBrandSelect.value);
-        }
-
-        // Go back to Camera List tab if we are in calculation
-        const activeTab = document.querySelector('.nav-item.active').dataset.tab;
-        if (activeTab === 'analytics') {
-            const cameraTab = document.querySelector('.nav-item[data-tab="cameras"]');
-            if (cameraTab) cameraTab.click();
-        }
-
-        lucide.createIcons();
-        alert('Bạn đã đăng xuất thành công.');
-    }
 
     // Admin Controls: Add and Delete Products
     const addLensBtn = document.getElementById('add-lens-btn');
     const deleteLensBtn = document.getElementById('delete-lens-btn');
-    
+
     if (addLensBtn) {
         addLensBtn.addEventListener('click', () => {
             const activeLensCategory = document.querySelector('.inner-tab-btn[data-lens-category].active').dataset.lensCategory;
-            const newModel = prompt('Nhập tên Product Model:', 'NEW-MODEL-01');
+            const newModel = prompt('Enter Product Model:', 'NEW-MODEL-01');
             if (!newModel) return;
-            
+
             if (activeLensCategory === 'fa') {
-                const focalLength = prompt('Nhập Focal Length (mm):', '16 mm') || '16 mm';
-                const imageSize = prompt('Nhập Image Size:', 'Ø11 mm (2/3")') || 'Ø11 mm (2/3")';
+                const focalLength = prompt('Enter Focal Length (mm):', '16 mm') || '16 mm';
+                const imageSize = prompt('Enter Max Image Circle:', 'Ø11 mm (2/3")') || 'Ø11 mm (2/3")';
                 lensData.unshift({ model: newModel, focalLength: focalLength, imageSize: imageSize });
                 saveLensData();
                 renderLensTable(lensData);
             } else {
-                const sensorSize = prompt('Nhập Sensor Size:', '2/3"') || '2/3"';
-                const workingDistance = prompt('Nhập Working Distance:', '110 mm') || '110 mm';
-                const mag = prompt('Nhập Magnification (β):', '1.0') || '1.0';
+                const sensorSize = prompt('Enter Sensor Size:', '2/3"') || '2/3"';
+                const workingDistance = prompt('Enter Working Distance:', '110 mm') || '110 mm';
+                const mag = prompt('Enter Magnification (β):', '1.0') || '1.0';
                 teleLensData.unshift({ model: newModel, sensorSize: sensorSize, workingDistance: workingDistance, mag: mag });
                 saveTeleLensData();
                 renderTeleTable(teleLensData);
@@ -1585,15 +1742,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const activeLensCategory = document.querySelector('.inner-tab-btn[data-lens-category].active').dataset.lensCategory;
             const tbodyId = activeLensCategory === 'fa' ? 'lens-tbody' : 'tele-tbody';
             const selectedRow = document.querySelector(`#${tbodyId} tr.selected-row`);
-            
+
             if (!selectedRow) {
-                alert('Vui lòng click chọn một sản phẩm trong bảng để xóa.');
+                alert('Please click a product row in the table to delete.');
                 return;
             }
-            
+
             const modelName = selectedRow.querySelector('.model-name').textContent;
-            
-            if (confirm(`Xác nhận xóa: ${modelName}?`)) {
+
+            if (confirm(`Confirm deletion of: ${modelName}?`)) {
                 if (activeLensCategory === 'fa') {
                     const idx = lensData.findIndex(l => l.model === modelName);
                     if (idx !== -1) {
@@ -1619,42 +1776,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const activeLensCategory = document.querySelector('.inner-tab-btn[data-lens-category].active').dataset.lensCategory;
             const tbodyId = activeLensCategory === 'fa' ? 'lens-tbody' : 'tele-tbody';
             const selectedRow = document.querySelector(`#${tbodyId} tr.selected-row`);
-            
+
             if (!selectedRow) {
-                alert('Vui lòng click chọn một sản phẩm trong bảng để sửa.');
+                alert('Please click a product row in the table to edit.');
                 return;
             }
-            
+
             const modelName = selectedRow.querySelector('.model-name').textContent;
-            
+
             if (activeLensCategory === 'fa') {
                 const idx = lensData.findIndex(l => l.model === modelName);
                 if (idx !== -1) {
                     const item = lensData[idx];
-                    const newModel = prompt('Sửa Model:', item.model);
+                    const newModel = prompt('Edit Model:', item.model);
                     if (!newModel) return;
-                    const focalLength = prompt('Sửa Focal Length (mm):', item.focalLength) || item.focalLength;
-                    const imageSize = prompt('Sửa Image Size:', item.imageSize) || item.imageSize;
-                    
+                    const focalLength = prompt('Edit Focal Length (mm):', item.focalLength) || item.focalLength;
+                    const imageSize = prompt('Edit Max Image Circle:', item.imageSize) || item.imageSize;
+
                     lensData[idx] = { model: newModel, focalLength: focalLength, imageSize: imageSize };
                     saveLensData();
                     renderLensTable(lensData);
-                    alert('Đã cập nhật thông số lens thành công!');
+                    alert('Lens specifications updated successfully!');
                 }
             } else {
                 const idx = teleLensData.findIndex(l => l.model === modelName);
                 if (idx !== -1) {
                     const item = teleLensData[idx];
-                    const newModel = prompt('Sửa Model:', item.model);
+                    const newModel = prompt('Edit Model:', item.model);
                     if (!newModel) return;
-                    const sensorSize = prompt('Sửa Sensor Size:', item.sensorSize) || item.sensorSize;
-                    const workingDistance = prompt('Sửa Working Distance:', item.workingDistance) || item.workingDistance;
-                    const mag = prompt('Sửa Magnification (β):', item.mag || '1.0') || (item.mag || '1.0');
-                    
+                    const sensorSize = prompt('Edit Sensor Size:', item.sensorSize) || item.sensorSize;
+                    const workingDistance = prompt('Edit Working Distance:', item.workingDistance) || item.workingDistance;
+                    const mag = prompt('Edit Magnification (β):', item.mag || '1.0') || (item.mag || '1.0');
+
                     teleLensData[idx] = { model: newModel, sensorSize: sensorSize, workingDistance: workingDistance, mag: mag };
                     saveTeleLensData();
                     renderTeleTable(teleLensData);
-                    alert('Đã cập nhật thông số lens thành công!');
+                    alert('Lens specifications updated successfully!');
                 }
             }
         });
@@ -1665,10 +1822,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (addCameraBtn) {
         addCameraBtn.addEventListener('click', () => {
-            const newModel = prompt('Nhập tên Camera Model:', 'MV-CS000-NEW');
+            const newModel = prompt('Enter Camera Model:', 'MV-CS000-NEW');
             if (!newModel) return;
-            const res = prompt('Nhập Resolution (e.g., 1920 × 1200):', '1920 × 1200') || '1920 × 1200';
-            const sensor = prompt('Nhập Sensor Size (e.g., 1/1.8"):', '1/1.8"') || '1/1.8"';
+            const res = prompt('Enter Resolution (e.g., 1920 × 1200):', '1920 × 1200') || '1920 × 1200';
+            const sensor = prompt('Enter Sensor Size (e.g., 1/1.8"):', '1/1.8"') || '1/1.8"';
             cameraData.unshift({ model: newModel, resolution: res, sensorSize: sensor });
             saveCameraData();
             // Re-render current category
@@ -1680,21 +1837,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (deleteCameraBtn) {
         deleteCameraBtn.addEventListener('click', () => {
             const selectedRow = document.querySelector(`#camera-tbody tr.selected-row`);
-            
+
             if (!selectedRow) {
-                alert('Vui lòng click chọn một Camera trong bảng để xóa.');
+                alert('Please click a camera row in the table to delete.');
                 return;
             }
-            
+
             const modelName = selectedRow.querySelector('.model-name').textContent;
-            
-            if (confirm(`Xác nhận xóa: ${modelName}?`)) {
+
+            if (confirm(`Confirm deletion of: ${modelName}?`)) {
                 const idx = cameraData.findIndex(c => c.model === modelName);
                 if (idx !== -1) {
                     cameraData.splice(idx, 1);
                     saveCameraData();
                 }
-                
+
                 if (searchInput.value) {
                     searchInput.dispatchEvent(new Event('input'));
                 } else {
@@ -1709,30 +1866,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editCameraBtn) {
         editCameraBtn.addEventListener('click', () => {
             const selectedRow = document.querySelector(`#camera-tbody tr.selected-row`);
-            
+
             if (!selectedRow) {
-                alert('Vui lòng click chọn một Camera trong bảng để sửa.');
+                alert('Please click a camera row in the table to edit.');
                 return;
             }
-            
+
             const modelName = selectedRow.querySelector('.model-name').textContent;
             const idx = cameraData.findIndex(c => c.model === modelName);
-            
+
             if (idx !== -1) {
                 const item = cameraData[idx];
-                const newModel = prompt('Sửa Model:', item.model);
+                const newModel = prompt('Edit Model:', item.model);
                 if (!newModel) return;
-                const res = prompt('Sửa Resolution (e.g., 1920 × 1200):', item.resolution) || item.resolution;
-                const sensor = prompt('Sửa Sensor Size (e.g., 1/1.8"):', item.sensorSize) || item.sensorSize;
-                const dims = prompt('Sửa W × H dimensions (mm) (e.g., 7.20 × 5.40 hoặc để trống):', item.dimensions || '') || item.dimensions || '';
-                
+                const res = prompt('Edit Resolution (e.g., 1920 × 1200):', item.resolution) || item.resolution;
+                const sensor = prompt('Edit Sensor Size (e.g., 1/1.8"):', item.sensorSize) || item.sensorSize;
+                const dims = prompt('Edit W × H dimensions (mm) (e.g., 7.20 × 5.40 or leave blank):', item.dimensions || '') || item.dimensions || '';
+
                 cameraData[idx] = { model: newModel, resolution: res, sensorSize: sensor, dimensions: dims };
                 saveCameraData();
-                
+
                 // Re-render
                 const activeBtn = document.querySelector('.inner-tab-btn[data-category].active');
                 if (activeBtn) activeBtn.click();
-                alert('Đã cập nhật thông số camera thành công!');
+                alert('Camera specifications updated successfully!');
             }
         });
     }
@@ -1760,42 +1917,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Import Data (JSON)
     const importDataBtn = document.getElementById('import-data-btn');
     const importDataInput = document.getElementById('import-data-input');
-    
+
     if (importDataBtn && importDataInput) {
         importDataBtn.addEventListener('click', () => {
             importDataInput.click();
         });
-        
+
         importDataInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const importedData = JSON.parse(e.target.result);
                     if (importedData.cameraData && importedData.lensData && importedData.teleLensData) {
-                        if (confirm('Xác nhận nạp dữ liệu từ file? Toàn bộ dữ liệu hiện tại sẽ bị thay thế.')) {
+                        if (confirm('Confirm importing data from file? All current configuration will be replaced.')) {
                             cameraData = importedData.cameraData;
                             lensData = importedData.lensData;
                             teleLensData = importedData.teleLensData;
-                            
+
                             saveCameraData();
                             saveLensData();
                             saveTeleLensData();
-                            
+
                             // Re-render
                             renderTable(cameraData);
                             renderLensTable(lensData);
                             renderTeleTable(teleLensData);
-                            
-                            alert('Tải dữ liệu phân tích hệ thống thành công!');
+
+                            alert('System configuration loaded successfully!');
                         }
                     } else {
-                        alert('File dữ liệu không đúng định dạng. Vui lòng chọn file JSON được xuất từ ứng dụng này.');
+                        alert('Invalid file format. Please select a JSON configuration file exported from this application.');
                     }
                 } catch (error) {
-                    alert('Lỗi đọc file. Vui lòng chọn file JSON hợp lệ.');
+                    alert('Error reading file. Please select a valid JSON file.');
                 }
             };
             reader.readAsText(file);
@@ -1803,8 +1960,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const logoutBtn = document.getElementById('user-logout-trigger');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
+        logoutBtn.addEventListener('click', typeof handleLogout === 'function' ? handleLogout : () => { });
     }
 
     // ===== LIGHTING SIMULATION LOGIC =====
@@ -1894,10 +2052,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 cameraVideo.srcObject = cameraStream;
                 cameraPreviewContainer.style.display = 'block';
                 lightCameraBtn.innerHTML = '<i data-lucide="camera-off"></i><span>Stop Camera</span>';
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             } catch (err) {
                 console.error("Error accessing camera:", err);
-                alert("Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.");
+                alert("Unable to access camera. Please verify device permissions.");
             }
         });
     }
@@ -1938,8 +2096,8 @@ document.addEventListener('DOMContentLoaded', () => {
             cameraStream = null;
         }
         cameraPreviewContainer.style.display = 'none';
-        lightCameraBtn.innerHTML = '<i data-lucide="camera"></i><span>Take Photo</span>';
-        lucide.createIcons();
+        lightCameraBtn.innerHTML = '<i data-lucide="camera"></i><span>Take Snapshot</span>';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Handle Light Mode Selection
@@ -2372,7 +2530,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ctx.putImageData(resultImageData, 0, 0);
         convResultPlaceholder.style.display = 'none';
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     if (convDownloadBtn) {
@@ -2446,7 +2604,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const desiredAcc = parseFloat(calcVisionError.value);
 
             if (!desiredFov || !desiredWd || !desiredAcc) {
-                alert('Vui lòng nhập FOV Width, Working Distance và Vision Accuracy dự kiến!');
+                alert('Please enter expected FOV Width, Working Distance, and Target Accuracy!');
                 return;
             }
 
@@ -2523,7 +2681,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (top2.length > 0) {
                 renderRecommendations(top2);
             } else {
-                recGrid.innerHTML = '<div class="recommendation-card placeholder"><p>Không tìm thấy phần cứng phù hợp. Thử giảm độ chính xác hoặc thay đổi FOV/WD.</p></div>';
+                recGrid.innerHTML = '<div class="recommendation-card placeholder"><p>No matching hardware configuration found. Try adjusting accuracy or modifying FOV / Working Distance.</p></div>';
             }
         });
     }
@@ -2566,12 +2724,34 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="rec-stat-value">${(100 - rec.score).toFixed(1)}%</span>
                     </div>
                 </div>
+                <button class="action-btn view-rec-3d-btn" style="margin-top: 0.75rem; width: 100%; justify-content: center; gap: 0.5rem; background: rgba(0, 242, 255, 0.12); border-color: var(--accent); color: var(--accent); font-weight: 500;">
+                    <i data-lucide="box"></i> Simulate 3D Concept
+                </button>
             `;
+            const btn3d = card.querySelector('.view-rec-3d-btn');
+            if (btn3d) {
+                btn3d.addEventListener('click', () => {
+                    const fovW = parseFloat(document.getElementById('calc-fov-width').value) || 80;
+                    const fovH = parseFloat(document.getElementById('calc-fov-height').value) || (fovW * 0.75);
+                    const extLen = document.getElementById('use-adapter-ring')?.checked ? (parseFloat(document.getElementById('calc-ring-length')?.value) || 5) : 0;
+                    open3DConceptModal({
+                        cameraName: rec.camera.model,
+                        sensorSize: rec.camera.sensorSize,
+                        lensName: rec.lens.model,
+                        focalLength: rec.lens.focalLength,
+                        extensionLength: extLen,
+                        workingDistance: rec.actualWd,
+                        fovWidth: fovW,
+                        fovHeight: fovH,
+                        pixelSize: rec.actualAcc / 3
+                    });
+                });
+            }
             recGrid.appendChild(card);
         });
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
-    
+
     // ===== THEME TOGGLE LOGIC =====
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const themeIcon = document.getElementById('theme-icon');
@@ -2610,7 +2790,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (themeIcon) {
                 // Update icon inner HTML
                 themeIcon.setAttribute('data-lucide', iconName);
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         });
     }
@@ -2672,7 +2852,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-    } catch(e) {
+    } catch (e) {
         console.error("Failed to load saved extData:", e);
     }
 
@@ -2711,7 +2891,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function calculateExt() {
         if (!extBrandSelect || !extLensSelect || !extWdSelect || !extResultDisplay || !extResultNote) return;
-        
+
         const brand = extBrandSelect.value;
         const lens = extLensSelect.value;
         const wd = parseInt(extWdSelect.value, 10);
@@ -2740,7 +2920,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (rawVal === 'not have ext') {
             extResultDisplay.textContent = 'None';
             extResultDisplay.style.color = 'var(--orange)';
-            extResultNote.textContent = 'Extension tube cannot be used / not required for this distance';
+            extResultNote.textContent = 'Extension ring not required for this working distance';
             if (wrapper) {
                 wrapper.style.borderColor = 'var(--orange)';
                 wrapper.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.15)';
@@ -2749,7 +2929,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (rawVal === 'EXT problem') {
             extResultDisplay.textContent = 'Error';
             extResultDisplay.style.color = 'var(--red)';
-            extResultNote.textContent = 'Extension tube is problematic / incompatible for this setup';
+            extResultNote.textContent = 'Incompatible configuration for extension ring';
             if (wrapper) {
                 wrapper.style.borderColor = 'var(--red)';
                 wrapper.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.15)';
@@ -2771,14 +2951,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveExtData() {
         try {
             localStorage.setItem('vision_extData', JSON.stringify(extData));
-        } catch(e) {
+        } catch (e) {
             console.error("Failed to save extData:", e);
         }
     }
 
     function editSelectedExtValue() {
         if (currentUserRole !== 'Admin') {
-            alert('Quyền Admin mới được phép chỉnh sửa.');
+            alert('Admin privilege required for editing.');
             return;
         }
         const brand = extBrandSelect.value;
@@ -2786,7 +2966,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const wd = parseInt(extWdSelect.value, 10);
 
         if (!brand || !lens || isNaN(wd)) {
-            alert('Vui lòng chọn Lens và WD trước.');
+            alert('Please select Lens and Working Distance first.');
             return;
         }
 
@@ -2794,7 +2974,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const valMap = brandInfo.values[lens] || {};
         const currentVal = valMap[wd] !== undefined ? valMap[wd] : '';
 
-        const promptMsg = `Nhập giá trị Extension mới cho:\nBrand: ${brand.toUpperCase()}\nLens: ${lens}\nWD: ${wd} mm\n\n(Ví dụ: 1;2 hoặc 5 hoặc not have ext hoặc EXT problem. Để trống để xóa/vô hiệu hóa):`;
+        const promptMsg = `Enter new Extension Value for:\nBrand: ${brand.toUpperCase()}\nLens: ${lens}\nWD: ${wd} mm\n\n(Example: 1;2 or 5 or "not have ext" or "EXT problem". Leave blank to clear):`;
         const newValRaw = prompt(promptMsg, currentVal);
 
         if (newValRaw === null) return; // User cancelled
@@ -2931,7 +3111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let displayVal = '';
                 let cellClass = '';
                 let style = 'text-align: center; cursor: pointer; transition: all 0.2s ease; border-bottom: 1px solid var(--glass-border); padding: 0.75rem;';
-                
+
                 if (val === undefined || val === null || val === "") {
                     displayVal = '-';
                     cellClass = 'cell-disabled';
@@ -2963,8 +3143,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Attach click & dblclick listeners to cells
         const cells = extInteractiveTbody.querySelectorAll('.ext-cell');
         cells.forEach(cell => {
-            const col = cell.dataset.colId;
-            const wd = cell.dataset.rowWd;
+            const col = (cell.dataset && cell.dataset.colId) || cell.getAttribute('data-col-id');
+            const wd = (cell.dataset && cell.dataset.rowWd) || cell.getAttribute('data-row-wd');
 
             cell.addEventListener('click', () => {
                 if (currentUserRole !== 'Admin' && cell.classList.contains('cell-disabled')) return;
@@ -3023,6 +3203,2708 @@ document.addEventListener('DOMContentLoaded', () => {
         populateWds(initialBrand);
         renderExtTable(initialBrand);
         calculateExt();
+    }
+
+    // Call init
+    initExtCalculator();
+
+    // ===== 3D CONCEPT SIMULATION ENGINE =====
+    let scene3D, camera3D, renderer3D, controls3D, transformControls3D = null;
+    let components3DGroup = null;
+    let activeLightGroup3D = null;
+    let activeWorkGroup3D = null;
+    let activeCamAssemblyGroup3D = null;
+    let activeFovGroup3D = null;         // FOV optical cone group — rebuilt when workpiece moves
+    let activeTransformTarget = null;
+    let baseLightPosY = 0;
+    let baseWorkGroupPosY = 0;
+    let baseCamAssemblyPosYVal = 0;
+    let animFrame3DId = null;
+    let dimensionGroup3D = null;
+    let showWdLwdAnnotation = true;
+    let dimAnnotationWD = 150;   // Y world position of WD top tick (controls line endpoint)
+    let dimAnnotationLWD = 30;   // Y world position of LWD top tick (controls line endpoint)
+    let dimLabelWD = 150;        // displayed text value on WD label (editable independently)
+    let dimLabelLWD = 30;        // displayed text value on LWD label (editable independently)
+    // 3D positions for label projection (world Y values)
+    let dimAnnotWDTopY = 0;
+    let dimAnnotWDBottomY = 0;
+    let dimAnnotLWDTopY = 0;
+    let dimAnnotLWDBottomY = 0;
+    let dimAnnotXPos = 0;        // auto-computed base X offset (read-only reference)
+    let dimWDXOffset = 0;        // user-adjustable X position of WD line (horizontal drag)
+    let dimLWDXOffset = 0;       // user-adjustable X position of LWD line (horizontal drag)
+
+    let current3DConfig = {
+        cameraName: 'HIKMV-CA050-10GM',
+        sensorSize: '2/3" (8.8 × 6.6 mm)',
+        lensName: 'FA 12mm F1.4',
+        focalLength: '12mm',
+        extensionLength: 5,
+        workingDistance: 150,
+        fovWidth: 80,
+        fovHeight: 60,
+        pixelSize: 0.025,
+        lightType: 'ring',
+        lightColor: 'white',
+        workpiece: 'pcb',
+        showFov: true,
+        showDims: true
+    };
+
+    // Snapshot of the config at the moment the modal was first opened — used by the Reset button
+    let initialOpen3DConfig = null;
+
+    const modal3D = document.getElementById('modal-3d-concept');
+    const close3DBtn = document.getElementById('close-3d-modal-btn');
+    const export3DBtnTop = document.getElementById('export-3d-btn-top');
+    const export3DBtnBottom = document.getElementById('btn-export-3d-png');
+    const reset3DCamBtn = document.getElementById('reset-3d-cam-btn');
+
+    const select3DLightType = document.getElementById('select-3d-light-type');
+    const select3DLightColor = document.getElementById('select-3d-light-color');
+    const select3DWorkpiece = document.getElementById('select-3d-workpiece');
+    const chk3DShowFov = document.getElementById('chk-3d-show-fov');
+    const chk3DShowDims = document.getElementById('chk-3d-show-dims');
+
+    function init3DConceptViewer() {
+        const canvas = document.getElementById('canvas-3d');
+        if (!canvas || typeof THREE === 'undefined') return;
+
+        const container = canvas.parentElement;
+        const width = container.clientWidth || 800;
+        const height = container.clientHeight || 500;
+
+        scene3D = new THREE.Scene();
+        scene3D.background = new THREE.Color(0xffffff);
+
+        camera3D = new THREE.PerspectiveCamera(45, width / height, 0.1, 4000);
+        camera3D.position.set(240, 220, 300);
+
+        renderer3D = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha: true,
+            preserveDrawingBuffer: true
+        });
+        renderer3D.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer3D.setSize(width, height);
+        renderer3D.setClearColor(0xffffff, 1);
+        renderer3D.shadowMap.enabled = true;
+        renderer3D.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        if (typeof THREE.OrbitControls !== 'undefined') {
+            controls3D = new THREE.OrbitControls(camera3D, renderer3D.domElement);
+            controls3D.enableDamping = true;
+            controls3D.dampingFactor = 0.05;
+            controls3D.maxPolarAngle = Math.PI / 2 + 0.1;
+            controls3D.minDistance = 30;
+            controls3D.maxDistance = 1500;
+        }
+
+        // Ultra-Bright High-Contrast Studio Lighting Setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        scene3D.add(ambientLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 0.9);
+        hemiLight.position.set(0, 500, 0);
+        scene3D.add(hemiLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.6);
+        dirLight1.position.set(220, 500, 320);
+        dirLight1.castShadow = true;
+        scene3D.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x0284c7, 0.6);
+        dirLight2.position.set(-220, 180, -220);
+        scene3D.add(dirLight2);
+
+        components3DGroup = new THREE.Group();
+        scene3D.add(components3DGroup);
+
+        // TransformControls for interactive drag & rotate on Light Unit
+        if (typeof THREE.TransformControls !== 'undefined') {
+            transformControls3D = new THREE.TransformControls(camera3D, renderer3D.domElement);
+            transformControls3D.setSize(0.75);
+            transformControls3D.addEventListener('dragging-changed', function (event) {
+                if (controls3D) controls3D.enabled = !event.value;
+            });
+            transformControls3D.addEventListener('change', function () {
+                if (activeTransformTarget) {
+                    syncLightSlidersFrom3D();
+                }
+                if (showWdLwdAnnotation) {
+                    drawDimensionAnnotations(current3DConfig);
+                }
+            });
+            scene3D.add(transformControls3D);
+        }
+
+        // Canvas Raycaster Click Handler to attach TransformGizmo to 3D targets
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        canvas.addEventListener('pointerdown', (e) => {
+            if (!canvas || !camera3D || !scene3D) return;
+            if (transformControls3D && transformControls3D.dragging) return;
+
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera3D);
+
+            const checkTargets = [];
+            if (activeWorkGroup3D) checkTargets.push(activeWorkGroup3D);
+            if (activeLightGroup3D) checkTargets.push(activeLightGroup3D);
+            if (activeCamAssemblyGroup3D) checkTargets.push(activeCamAssemblyGroup3D);
+
+            const intersects = raycaster.intersectObjects(checkTargets, true);
+            if (intersects.length > 0) {
+                const hitObj = intersects[0].object;
+                if (isChildOfObject(hitObj, activeWorkGroup3D)) {
+                    select3DTransformTarget(activeWorkGroup3D, 'Workpiece / Product Specimen');
+                } else if (isChildOfObject(hitObj, activeLightGroup3D)) {
+                    select3DTransformTarget(activeLightGroup3D, 'Lighting Assembly');
+                } else if (isChildOfObject(hitObj, activeCamAssemblyGroup3D)) {
+                    select3DTransformTarget(activeCamAssemblyGroup3D, 'Camera & Lens Assembly');
+                }
+            }
+        });
+
+        initLightTransformControls();
+        update3DBrightness(65);
+        window.addEventListener('resize', on3DWindowResize);
+    }
+
+    function on3DWindowResize() {
+        const canvas = document.getElementById('canvas-3d');
+        if (!canvas || !renderer3D || !camera3D) return;
+        const container = canvas.parentElement;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        if (width > 0 && height > 0) {
+            camera3D.aspect = width / height;
+            camera3D.updateProjectionMatrix();
+            renderer3D.setSize(width, height);
+        }
+    }
+
+    function animate3D() {
+        animFrame3DId = requestAnimationFrame(animate3D);
+        if (controls3D) controls3D.update();
+
+        const curProductY = activeWorkGroup3D ? activeWorkGroup3D.position.y : 0;
+
+        // ── Dynamic FOV cone: rebuild when workpiece Y has changed ───────────────
+        if (activeFovGroup3D && Math.abs(curProductY - (activeFovGroup3D.userData.lastWorkpieceY || 0)) > 0.05) {
+            rebuildFovCone(current3DConfig, curProductY);
+        }
+
+        // ── Dynamic WD/LWD annotation lines: redraw when workpiece Y has changed ──
+        if (showWdLwdAnnotation) {
+            if (dimensionGroup3D && (dimAnnotWDBottomY !== curProductY || dimAnnotLWDBottomY !== curProductY)) {
+                if (!window._dimIsRedrawing && scene3D) {
+                    window._dimIsRedrawing = true;
+                    drawDimensionAnnotations(current3DConfig);
+                    window._dimIsRedrawing = false;
+                }
+            } else if (dimensionGroup3D) {
+                updateDimLabelPositions();
+            }
+        }
+
+        if (renderer3D && scene3D && camera3D) {
+            renderer3D.render(scene3D, camera3D);
+        }
+    }
+
+    // ── Rebuild only the FOV optical cone without rebuilding the full 3D scene ─────────
+    function rebuildFovCone(cfg, workpieceY) {
+        if (!scene3D || !components3DGroup) return;
+
+        // Remove old cone from group
+        if (activeFovGroup3D) {
+            components3DGroup.remove(activeFovGroup3D);
+            activeFovGroup3D = null;
+        }
+
+        if (cfg.showFov === false) return;
+
+        const fovW = Math.max(10, cfg.fovWidth || 80);
+        const fovH = Math.max(10, cfg.fovHeight || 60);
+        // Lens bottom face is FIXED in world space at Y = workingDistance (camera does not move with workpiece)
+        const topLensY = cfg.workingDistance || 150;
+        // Cone bottom follows the workpiece surface
+        const botY = workpieceY;
+        const lightColorHex = getLightColorHex(cfg.lightColor || 'white');
+
+        const fovConeGroup = new THREE.Group();
+        fovConeGroup.userData.lastWorkpieceY = workpieceY;
+
+        // 4 corner lines
+        const lineMat = new THREE.LineBasicMaterial({ color: lightColorHex, linewidth: 2, transparent: true, opacity: 0.8 });
+        const corners = [
+            [-fovW / 2, botY, -fovH / 2],
+            [ fovW / 2, botY, -fovH / 2],
+            [ fovW / 2, botY,  fovH / 2],
+            [-fovW / 2, botY,  fovH / 2]
+        ];
+        corners.forEach(c => {
+            const geo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, topLensY, 0),
+                new THREE.Vector3(c[0], c[1], c[2])
+            ]);
+            fovConeGroup.add(new THREE.Line(geo, lineMat));
+        });
+
+        // Translucent pyramid volume
+        const pyShape = new THREE.BufferGeometry();
+        const v = new Float32Array([
+            0, topLensY, 0,  -fovW/2, botY, -fovH/2,  fovW/2, botY, -fovH/2,
+            0, topLensY, 0,   fovW/2, botY, -fovH/2,  fovW/2, botY,  fovH/2,
+            0, topLensY, 0,   fovW/2, botY,  fovH/2, -fovW/2, botY,  fovH/2,
+            0, topLensY, 0,  -fovW/2, botY,  fovH/2, -fovW/2, botY, -fovH/2
+        ]);
+        pyShape.setAttribute('position', new THREE.BufferAttribute(v, 3));
+        pyShape.computeVertexNormals();
+        const pyMat = new THREE.MeshBasicMaterial({
+            color: lightColorHex, transparent: true, opacity: 0.12, side: THREE.DoubleSide
+        });
+        fovConeGroup.add(new THREE.Mesh(pyShape, pyMat));
+
+        components3DGroup.add(fovConeGroup);
+        activeFovGroup3D = fovConeGroup;
+    }
+
+    // Drag state for dimension annotation handles
+    let draggingDim = null;       // 'wd' | 'lwd'
+    let dimDragStartMouseX = 0;
+    let dimDragStartMouseY = 0;
+    let dimDragStartValue = 0;    // initial WD or LWD mm value
+    let dimDragStartXOff = 0;    // initial X world offset of the line being dragged
+
+    // ── Helper: project world point → canvas pixel coords ────────────────────────
+    function project3DToScreen(wx, wy, wz) {
+        if (!camera3D || !renderer3D) return { x: -999, y: -999, behind: true };
+        const v = new THREE.Vector3(wx, wy, wz);
+        v.project(camera3D);
+        const canvas = renderer3D.domElement;
+        return {
+            x: (v.x * 0.5 + 0.5) * canvas.clientWidth,
+            y: (-v.y * 0.5 + 0.5) * canvas.clientHeight,
+            behind: v.z > 1
+        };
+    }
+
+    function computeWorldYUnitsPerPixel(worldY, xOff) {
+        if (!camera3D || !renderer3D) return 1;
+        const p0 = project3DToScreen(xOff, worldY, 0);
+        const p1 = project3DToScreen(xOff, worldY + 10, 0);
+        const d = Math.abs(p1.y - p0.y);
+        return d > 0 ? 10 / d : 1;
+    }
+
+    function computeWorldXUnitsPerPixel(worldY, xOff) {
+        if (!camera3D || !renderer3D) return 1;
+        const p0 = project3DToScreen(xOff, worldY, 0);
+        const p1 = project3DToScreen(xOff + 10, worldY, 0);
+        const d = Math.abs(p1.x - p0.x);
+        return d > 0 ? 10 / d : 1;
+    }
+
+    // ── Draw 3D dimension lines ───────────────────────────────────────────────────
+    function drawDimensionAnnotations(cfg) {
+        if (!scene3D) return;
+
+        if (dimensionGroup3D) { scene3D.remove(dimensionGroup3D); dimensionGroup3D = null; }
+
+        if (!showWdLwdAnnotation) { clearDimLabelOverlay(); return; }
+
+        const wd = dimAnnotationWD;
+        const lwd = dimAnnotationLWD;
+        const fovW = cfg ? Math.max(10, cfg.fovWidth || 80) : 80;
+        const baseXOffset = fovW / 2 + 55;
+
+        // Initialise per-line X offsets on first draw (or after config rebuild)
+        if (dimWDXOffset === 0) dimWDXOffset = baseXOffset;
+        if (dimLWDXOffset === 0) dimLWDXOffset = baseXOffset + 28;
+        dimAnnotXPos = baseXOffset;
+
+        dimensionGroup3D = new THREE.Group();
+        const mkMat = (hex) => new THREE.LineBasicMaterial({ color: hex, linewidth: 2 });
+        const mkDim = (hex) => new THREE.LineBasicMaterial({ color: (hex & 0x666666) | 0x111111, linewidth: 1 });
+
+        function drawDimLine(yTop, yBottom, xOff, colorHex) {
+            const mat = mkMat(colorHex);
+            const dim = mkDim(colorHex);
+            const tick = 8;
+            // Vertical shaft
+            dimensionGroup3D.add(new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xOff, yTop, 0), new THREE.Vector3(xOff, yBottom, 0)]), mat));
+            // Top tick
+            dimensionGroup3D.add(new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xOff - tick, yTop, 0), new THREE.Vector3(xOff + tick, yTop, 0)]), mat));
+            // Bottom tick
+            dimensionGroup3D.add(new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xOff - tick, yBottom, 0), new THREE.Vector3(xOff + tick, yBottom, 0)]), mat));
+            // Horizontal guide lines (dim colour, left side only)
+            dimensionGroup3D.add(new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, yTop, 0), new THREE.Vector3(xOff - 20, yTop, 0)]), dim));
+            dimensionGroup3D.add(new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, yBottom, 0), new THREE.Vector3(xOff - 20, yBottom, 0)]), dim));
+        }
+
+        const productSurfaceY = activeWorkGroup3D ? activeWorkGroup3D.position.y : 0;
+        const minAllowedY = productSurfaceY + 0.5;   // WD must stay above surface
+
+        // Stationary top tick positions (Lens bottom face & Light bottom face)
+        let wdTopY = (typeof dimAnnotWDTopY !== 'undefined' && dimAnnotWDTopY !== 0 && !window._resetDimTop)
+            ? dimAnnotWDTopY
+            : wd;
+        let lwdTopY = (typeof dimAnnotLWDTopY !== 'undefined' && dimAnnotLWDTopY !== 0 && !window._resetDimTop)
+            ? dimAnnotLWDTopY
+            : lwd;
+
+        // WD must always stay above the product surface
+        if (wdTopY < minAllowedY) wdTopY = minAllowedY;
+        // LWD allows negative (backlight: light is below the workpiece)
+        // No clamp applied for lwdTopY
+
+        drawDimLine(wdTopY, productSurfaceY, dimWDXOffset, 0xf97316);   // WD  – orange
+
+        // LWD: when backlight (lwdTopY < productSurfaceY), the light is BELOW the workpiece.
+        // Draw the line from productSurfaceY DOWN to lwdTopY (swap so yTop > yBottom always).
+        if (lwdTopY < productSurfaceY) {
+            drawDimLine(productSurfaceY, lwdTopY, dimLWDXOffset, 0x22d3ee);  // backlight – line goes downward
+        } else {
+            drawDimLine(lwdTopY, productSurfaceY, dimLWDXOffset, 0x22d3ee); // normal – line goes upward
+        }
+
+        scene3D.add(dimensionGroup3D);
+
+        dimAnnotWDTopY = wdTopY; dimAnnotWDBottomY = productSurfaceY;
+        dimAnnotLWDTopY = lwdTopY; dimAnnotLWDBottomY = productSurfaceY;
+
+        // Label display values — signed: negative when backlight (light below workpiece)
+        dimLabelWD = Math.abs(dimAnnotWDTopY - dimAnnotWDBottomY);
+        dimLabelLWD = dimAnnotLWDTopY - dimAnnotLWDBottomY;  // signed: negative for backlight
+
+        // Keep sidebar inputs in sync with real-time distance
+        const inpWd = document.getElementById('inp-dim-wd');
+        const inpLwd = document.getElementById('inp-dim-lwd');
+        if (inpWd) inpWd.value = dimLabelWD.toFixed(0);
+        if (inpLwd) inpLwd.value = dimLabelLWD.toFixed(0);
+
+        updateDimLabelPositions();
+        setupDimDragHandlers();
+    }
+
+    function clearDimLabelOverlay() {
+        const el = document.getElementById('dim-label-overlay');
+        if (el) el.innerHTML = '';
+    }
+
+    // ── HTML label overlay (updated every animation frame) ────────────────────────
+    function updateDimLabelPositions() {
+        if (!camera3D || !renderer3D) return;
+        const overlay = document.getElementById('dim-label-overlay');
+        if (!overlay) return;
+        if (!showWdLwdAnnotation) { overlay.innerHTML = ''; return; }
+
+        const wdMidY = (dimAnnotWDTopY + dimAnnotWDBottomY) / 2;
+        const lwdMidY = (dimAnnotLWDTopY + dimAnnotLWDBottomY) / 2;
+
+        const pWDmid = project3DToScreen(dimWDXOffset, wdMidY, 0);
+        const pLWDmid = project3DToScreen(dimLWDXOffset, lwdMidY, 0);
+        const pWDtop = project3DToScreen(dimWDXOffset, dimAnnotWDTopY, 0);
+        const pLWDtop = project3DToScreen(dimLWDXOffset, dimAnnotLWDTopY, 0);
+
+        // Use the independent label values (set by drag OR by the Update button)
+        // LWD can be negative (backlight mode: light below workpiece)
+        const wdVal = dimLabelWD.toFixed(0);
+        const lwdVal = dimLabelLWD.toFixed(0);   // signed – negative shows with minus sign
+
+        // Each label chip: sits next to mid-point, pointer-events:none
+        // Each handle circle: sits on top-tick, cursor:move, pointer-events:all
+        overlay.innerHTML = `
+            ${!pWDmid.behind ? `
+            <div style="position:absolute;left:${pWDmid.x + 10}px;top:${pWDmid.y - 14}px;
+                background:rgba(10,14,24,0.92);border:1.5px solid #f97316;border-radius:5px;
+                padding:3px 10px;font-family:'Orbitron',monospace;font-size:0.72rem;font-weight:700;
+                color:#f97316;white-space:nowrap;user-select:none;pointer-events:none;">
+                WD = ${wdVal} mm
+            </div>
+            <div id="dim-drag-wd-top"
+                style="position:absolute;left:${pWDtop.x - 10}px;top:${pWDtop.y - 10}px;
+                width:20px;height:20px;border-radius:50%;border:2px solid #f97316;
+                background:rgba(249,115,22,0.28);cursor:move;pointer-events:all;
+                box-shadow:0 0 8px rgba(249,115,22,0.7);display:flex;align-items:center;justify-content:center;">
+                <svg width="10" height="10" viewBox="0 0 10 10" style="opacity:.8">
+                    <path d="M5 1v8M1 5h8" stroke="#f97316" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </div>` : ''}
+            ${!pLWDmid.behind ? `
+            <div style="position:absolute;left:${pLWDmid.x + 10}px;top:${pLWDmid.y - 14}px;
+                background:rgba(10,14,24,0.92);border:1.5px solid #22d3ee;border-radius:5px;
+                padding:3px 10px;font-family:'Orbitron',monospace;font-size:0.72rem;font-weight:700;
+                color:#22d3ee;white-space:nowrap;user-select:none;pointer-events:none;">
+                LWD = ${lwdVal} mm
+            </div>
+            <div id="dim-drag-lwd-top"
+                style="position:absolute;left:${pLWDtop.x - 10}px;top:${pLWDtop.y - 10}px;
+                width:20px;height:20px;border-radius:50%;border:2px solid #22d3ee;
+                background:rgba(34,211,238,0.2);cursor:move;pointer-events:all;
+                box-shadow:0 0 8px rgba(34,211,238,0.6);display:flex;align-items:center;justify-content:center;">
+                <svg width="10" height="10" viewBox="0 0 10 10" style="opacity:.8">
+                    <path d="M5 1v8M1 5h8" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </div>` : ''}
+        `;
+
+        // Wire pointerdown for the 2-D drag handles
+        const wdHandle = document.getElementById('dim-drag-wd-top');
+        const lwdHandle = document.getElementById('dim-drag-lwd-top');
+        if (wdHandle) {
+            wdHandle.addEventListener('pointerdown', (e) => {
+                e.stopPropagation(); e.preventDefault();
+                draggingDim = 'wd';
+                dimDragStartMouseX = e.clientX;
+                dimDragStartMouseY = e.clientY;
+                dimDragStartValue = dimAnnotationWD;
+                dimDragStartXOff = dimWDXOffset;
+                wdHandle.setPointerCapture(e.pointerId);
+            });
+        }
+        if (lwdHandle) {
+            lwdHandle.addEventListener('pointerdown', (e) => {
+                e.stopPropagation(); e.preventDefault();
+                draggingDim = 'lwd';
+                dimDragStartMouseX = e.clientX;
+                dimDragStartMouseY = e.clientY;
+                dimDragStartValue = dimAnnotationLWD;
+                dimDragStartXOff = dimLWDXOffset;
+                lwdHandle.setPointerCapture(e.pointerId);
+            });
+        }
+    }
+
+    // ── One-time global drag handlers ─────────────────────────────────────────────
+    function setupDimDragHandlers() {
+        if (window._dimDragListenersAttached) return;
+        window._dimDragListenersAttached = true;
+
+        document.addEventListener('pointermove', (e) => {
+            if (!draggingDim) return;
+
+            const curXOff = draggingDim === 'wd' ? dimWDXOffset : dimLWDXOffset;
+            const curTopY = draggingDim === 'wd' ? dimAnnotWDTopY : dimAnnotLWDTopY;
+
+            // ── Vertical drag → change WD / LWD value (keeps measurement points fixed in world) ──
+            const scaleY = computeWorldYUnitsPerPixel(curTopY, curXOff);
+            const deltaY = -(e.clientY - dimDragStartMouseY) * scaleY;
+            const productSurfaceY = activeWorkGroup3D ? activeWorkGroup3D.position.y : 0;
+            const minAllowedY = productSurfaceY + 0.5;
+
+            // WD must stay above surface; LWD is free (backlight allows below surface = negative)
+            const newWDVal = Math.max(minAllowedY, dimDragStartValue + deltaY);
+            const newLWDVal = dimDragStartValue + deltaY;   // unclamped — can go negative
+
+            // ── Horizontal drag → move the entire dimension line left/right (no value change) ──
+            const scaleX = computeWorldXUnitsPerPixel(curTopY, curXOff);
+            const deltaX = (e.clientX - dimDragStartMouseX) * scaleX;
+            const newXOff = dimDragStartXOff + deltaX;
+
+            if (draggingDim === 'wd') {
+                dimAnnotationWD = newWDVal;
+                dimAnnotWDTopY = newWDVal;
+                dimLabelWD = newWDVal;   // label stays in sync with drag
+                dimWDXOffset = newXOff;
+                const inp = document.getElementById('inp-dim-wd');
+                if (inp) inp.value = newWDVal.toFixed(0);
+            } else {
+                // LWD signed value: positive = above workpiece (normal), negative = below (backlight)
+                dimAnnotationLWD = newLWDVal;
+                dimAnnotLWDTopY = newLWDVal;
+                dimLabelLWD = newLWDVal - productSurfaceY;  // signed distance from surface
+                dimLWDXOffset = newXOff;
+                const inp = document.getElementById('inp-dim-lwd');
+                if (inp) inp.value = (newLWDVal - productSurfaceY).toFixed(0);
+            }
+
+            if (!window._dimIsRedrawing && scene3D) {
+                window._dimIsRedrawing = true;
+                if (dimensionGroup3D) { scene3D.remove(dimensionGroup3D); dimensionGroup3D = null; }
+                drawDimensionAnnotations(current3DConfig);
+                window._dimIsRedrawing = false;
+            }
+        });
+
+        document.addEventListener('pointerup', () => {
+            draggingDim = null;
+            document.body.style.cursor = '';
+        });
+    }
+
+    function isChildOfObject(obj, parentGroup) {
+        if (!obj || !parentGroup) return false;
+        let curr = obj;
+        while (curr) {
+            if (curr === parentGroup) return true;
+            curr = curr.parent;
+        }
+        return false;
+    }
+
+    function select3DTransformTarget(targetGroup, nameLabel) {
+        if (!targetGroup) return;
+        activeTransformTarget = targetGroup;
+        if (transformControls3D && is3DGizmoVisible) {
+            transformControls3D.attach(targetGroup);
+        }
+        syncLightSlidersFrom3D();
+        const hudLbl = document.getElementById('hud-selected-target');
+        if (hudLbl) hudLbl.textContent = nameLabel || '3D Object';
+
+        const selectTargetObj = document.getElementById('select-3d-target-obj');
+        if (selectTargetObj) {
+            if (targetGroup === activeWorkGroup3D) selectTargetObj.value = 'workpiece';
+            else if (targetGroup === activeLightGroup3D) selectTargetObj.value = 'light';
+            else if (targetGroup === activeCamAssemblyGroup3D) selectTargetObj.value = 'camera';
+        }
+    }
+
+    let is3DGizmoVisible = true;
+
+    function toggle3DGizmoVisibility(show) {
+        if (show === undefined) is3DGizmoVisible = !is3DGizmoVisible;
+        else is3DGizmoVisible = !!show;
+
+        const btnGizmo = document.getElementById('btn-toggle-gizmo');
+        const chkGizmo = document.getElementById('chk-3d-show-gizmo');
+
+        if (chkGizmo) chkGizmo.checked = is3DGizmoVisible;
+
+        const target = activeTransformTarget || activeWorkGroup3D || activeLightGroup3D;
+
+        if (is3DGizmoVisible) {
+            if (transformControls3D && target) {
+                transformControls3D.attach(target);
+            }
+            if (btnGizmo) {
+                btnGizmo.innerHTML = '<i data-lucide="eye-off"></i>';
+                btnGizmo.style.background = '#0284c7';
+                btnGizmo.style.color = '#ffffff';
+                btnGizmo.title = 'Hide RGB Navigation Gizmo';
+            }
+        } else {
+            if (transformControls3D) {
+                transformControls3D.detach();
+            }
+            if (btnGizmo) {
+                btnGizmo.innerHTML = '<i data-lucide="eye"></i>';
+                btnGizmo.style.background = '#334155';
+                btnGizmo.style.color = '#cbd5e1';
+                btnGizmo.title = 'Show RGB Navigation Gizmo';
+            }
+        }
+        if (window.lucide) if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function initLightTransformControls() {
+        const sY = document.getElementById('slider-light-y');
+        const sX = document.getElementById('slider-light-x');
+        const sZ = document.getElementById('slider-light-z');
+        const sRot = document.getElementById('slider-light-rot');
+        const sScale = document.getElementById('slider-light-scale');
+
+        [sY, sX, sZ, sRot, sScale].forEach(s => {
+            if (s) s.addEventListener('input', applyLightTransformFromSliders);
+        });
+
+        const selectTargetObj = document.getElementById('select-3d-target-obj');
+        if (selectTargetObj) {
+            selectTargetObj.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === 'workpiece' && activeWorkGroup3D) {
+                    select3DTransformTarget(activeWorkGroup3D, 'Workpiece / Product Specimen');
+                } else if (val === 'light' && activeLightGroup3D) {
+                    select3DTransformTarget(activeLightGroup3D, 'Lighting Assembly');
+                } else if (val === 'camera' && activeCamAssemblyGroup3D) {
+                    select3DTransformTarget(activeCamAssemblyGroup3D, 'Camera & Lens Assembly');
+                }
+            });
+        }
+
+        const btnTrans = document.getElementById('btn-transform-translate');
+        const btnRot = document.getElementById('btn-transform-rotate');
+        const btnScale = document.getElementById('btn-transform-scale');
+        const btnReset = document.getElementById('btn-transform-reset');
+        const btnToggleGizmo = document.getElementById('btn-toggle-gizmo');
+        const chkGizmo = document.getElementById('chk-3d-show-gizmo');
+
+        if (btnToggleGizmo) {
+            btnToggleGizmo.addEventListener('click', () => toggle3DGizmoVisibility());
+        }
+        if (chkGizmo) {
+            chkGizmo.addEventListener('change', (e) => toggle3DGizmoVisibility(e.target.checked));
+        }
+
+        if (btnTrans) {
+            btnTrans.addEventListener('click', () => {
+                if (btnTrans) btnTrans.classList.add('active');
+                if (btnRot) btnRot.classList.remove('active');
+                if (btnScale) btnScale.classList.remove('active');
+                toggle3DGizmoVisibility(true);
+                if (transformControls3D) transformControls3D.setMode('translate');
+            });
+        }
+
+        if (btnRot) {
+            btnRot.addEventListener('click', () => {
+                if (btnRot) btnRot.classList.add('active');
+                if (btnTrans) btnTrans.classList.remove('active');
+                if (btnScale) btnScale.classList.remove('active');
+                toggle3DGizmoVisibility(true);
+                if (transformControls3D) transformControls3D.setMode('rotate');
+            });
+        }
+
+        if (btnScale) {
+            btnScale.addEventListener('click', () => {
+                if (btnScale) btnScale.classList.add('active');
+                if (btnTrans) btnTrans.classList.remove('active');
+                if (btnRot) btnRot.classList.remove('active');
+                toggle3DGizmoVisibility(true);
+                if (transformControls3D) transformControls3D.setMode('scale');
+            });
+        }
+
+        if (btnReset) {
+            btnReset.addEventListener('click', resetLightSliders);
+        }
+    }
+
+    function applyLightTransformFromSliders() {
+        const target = activeTransformTarget || activeWorkGroup3D || activeLightGroup3D;
+        if (!target) return;
+        const dy = parseFloat(document.getElementById('slider-light-y')?.value || 0);
+        const dx = parseFloat(document.getElementById('slider-light-x')?.value || 0);
+        const dz = parseFloat(document.getElementById('slider-light-z')?.value || 0);
+        const rot = parseFloat(document.getElementById('slider-light-rot')?.value || 0);
+        const scalePct = parseFloat(document.getElementById('slider-light-scale')?.value || 100);
+        const scaleVal = scalePct / 100;
+
+        let baseY = baseLightPosY;
+        if (target === activeWorkGroup3D) baseY = baseWorkGroupPosY;
+        else if (target === activeCamAssemblyGroup3D) baseY = baseCamAssemblyPosYVal;
+
+        target.position.set(dx, baseY + dy, dz);
+        target.rotation.y = (rot * Math.PI) / 180;
+        target.scale.set(scaleVal, scaleVal, scaleVal);
+
+        if (target === activeWorkGroup3D) {
+            const curWorkY = target.position.y;
+            if (activeCamAssemblyGroup3D && typeof baseCamAssemblyPosYVal !== 'undefined') {
+                activeCamAssemblyGroup3D.position.y = baseCamAssemblyPosYVal + curWorkY;
+            }
+            if (activeLightGroup3D && typeof baseLightPosY !== 'undefined') {
+                activeLightGroup3D.position.y = baseLightPosY + curWorkY;
+            }
+        }
+
+        const lblY = document.getElementById('lbl-light-y');
+        const lblX = document.getElementById('lbl-light-x');
+        const lblZ = document.getElementById('lbl-light-z');
+        const lblRot = document.getElementById('lbl-light-rot');
+        const lblScale = document.getElementById('lbl-light-scale');
+
+        if (lblY) lblY.textContent = dy + ' mm';
+        if (lblX) lblX.textContent = dx + ' mm';
+        if (lblZ) lblZ.textContent = dz + ' mm';
+        if (lblRot) lblRot.textContent = rot + '°';
+        if (lblScale) lblScale.textContent = Math.round(scalePct) + '%';
+
+        if (showWdLwdAnnotation) {
+            drawDimensionAnnotations(current3DConfig);
+        }
+    }
+
+    function syncLightSlidersFrom3D() {
+        const target = activeTransformTarget || activeLightGroup3D;
+        if (!target) return;
+        let baseY = baseLightPosY;
+        if (target === activeWorkGroup3D) baseY = baseWorkGroupPosY;
+        else if (target === activeCamAssemblyGroup3D) baseY = baseCamAssemblyPosYVal;
+
+        const dy = Math.round(target.position.y - baseY);
+        const dx = Math.round(target.position.x);
+        const dz = Math.round(target.position.z);
+        const rot = Math.round((target.rotation.y * 180) / Math.PI);
+        const scalePct = Math.round(target.scale.x * 100);
+
+        const sY = document.getElementById('slider-light-y');
+        const sX = document.getElementById('slider-light-x');
+        const sZ = document.getElementById('slider-light-z');
+        const sRot = document.getElementById('slider-light-rot');
+        const sScale = document.getElementById('slider-light-scale');
+
+        if (sY) sY.value = dy;
+        if (sX) sX.value = dx;
+        if (sZ) sZ.value = dz;
+        if (sRot) sRot.value = rot;
+        if (sScale) sScale.value = scalePct;
+
+        const lblY = document.getElementById('lbl-light-y');
+        const lblX = document.getElementById('lbl-light-x');
+        const lblZ = document.getElementById('lbl-light-z');
+        const lblRot = document.getElementById('lbl-light-rot');
+        const lblScale = document.getElementById('lbl-light-scale');
+
+        if (lblY) lblY.textContent = dy + ' mm';
+        if (lblX) lblX.textContent = dx + ' mm';
+        if (lblZ) lblZ.textContent = dz + ' mm';
+        if (lblRot) lblRot.textContent = rot + '°';
+        if (lblScale) lblScale.textContent = scalePct + '%';
+    }
+
+    function resetLightSliders() {
+        const sY = document.getElementById('slider-light-y');
+        const sX = document.getElementById('slider-light-x');
+        const sZ = document.getElementById('slider-light-z');
+        const sRot = document.getElementById('slider-light-rot');
+        const sScale = document.getElementById('slider-light-scale');
+
+        if (sY) sY.value = 0;
+        if (sX) sX.value = 0;
+        if (sZ) sZ.value = 0;
+        if (sRot) sRot.value = 0;
+        if (sScale) sScale.value = 100;
+
+        if (activeLightGroup3D) {
+            activeLightGroup3D.position.set(0, baseLightPosY, 0);
+            activeLightGroup3D.rotation.set(0, 0, 0);
+            activeLightGroup3D.scale.set(1, 1, 1);
+        }
+
+        const lblY = document.getElementById('lbl-light-y');
+        const lblX = document.getElementById('lbl-light-x');
+        const lblZ = document.getElementById('lbl-light-z');
+        const lblRot = document.getElementById('lbl-light-rot');
+        const lblScale = document.getElementById('lbl-light-scale');
+
+        if (lblY) lblY.textContent = '0 mm';
+        if (lblX) lblX.textContent = '0 mm';
+        if (lblZ) lblZ.textContent = '0 mm';
+        if (lblRot) lblRot.textContent = '0°';
+        if (lblScale) lblScale.textContent = '100%';
+    }
+
+    function windowToModalConfig(inputConfig) {
+        current3DConfig = { ...current3DConfig, ...inputConfig };
+
+        const isTele = !!(inputConfig.isTelecentric || (inputConfig.lensName && /telecentric|tec-|tele/i.test(inputConfig.lensName)));
+        current3DConfig.isTelecentric = isTele;
+
+        // Reset annotation position overrides so new config calculates fresh values
+        dimAnnotWDTopY = 0;
+        dimAnnotLWDTopY = 0;
+        dimAnnotWDBottomY = 0;
+        dimAnnotLWDBottomY = 0;
+        dimWDXOffset = 0;
+        dimLWDXOffset = 0;
+
+        const selectLensType = document.getElementById('select-3d-lens-type');
+        if (selectLensType) {
+            selectLensType.value = isTele ? 'telecentric' : 'fa';
+        }
+
+        // Update DOM text elements
+        const elCam = document.getElementById('spec-3d-cam');
+        const elSensor = document.getElementById('spec-3d-sensor');
+        const elLens = document.getElementById('spec-3d-lens');
+        const elExt = document.getElementById('spec-3d-ext');
+        const elWd = document.getElementById('spec-3d-wd');
+        const elFov = document.getElementById('spec-3d-fov');
+        const elAcc = document.getElementById('spec-3d-acc');
+
+        const hudWd = document.getElementById('hud-wd-val');
+        const hudFov = document.getElementById('hud-fov-val');
+        const hudExt = document.getElementById('hud-ext-val');
+
+        if (elCam) elCam.textContent = current3DConfig.cameraName || 'Camera';
+        if (elSensor) elSensor.textContent = current3DConfig.sensorSize || 'Sensor';
+        if (elLens) elLens.textContent = current3DConfig.lensName || (isTele ? 'Industrial Telecentric Coaxial Lens' : 'FA Lens');
+        if (elExt) elExt.textContent = (current3DConfig.extensionLength || 0).toFixed(1) + ' mm';
+        if (elWd) elWd.textContent = (current3DConfig.workingDistance || 150).toFixed(1) + ' mm';
+        if (elFov) elFov.textContent = `${(current3DConfig.fovWidth || 80).toFixed(1)} × ${(current3DConfig.fovHeight || 60).toFixed(1)} mm`;
+        if (elAcc) elAcc.textContent = (current3DConfig.pixelSize || 0.025).toFixed(4) + ' mm/px';
+
+        if (hudWd) hudWd.textContent = (current3DConfig.workingDistance || 150).toFixed(0) + ' mm';
+        if (hudFov) hudFov.textContent = `${(current3DConfig.fovWidth || 80).toFixed(0)} × ${(current3DConfig.fovHeight || 60).toFixed(0)} mm`;
+        if (hudExt) hudExt.textContent = (current3DConfig.extensionLength || 0).toFixed(1) + ' mm';
+
+        build3DVisionSystem(current3DConfig);
+    }
+
+    function open3DConceptModal(config) {
+        if (typeof THREE === 'undefined') {
+            alert('Three.js library is loading, please wait a moment or refresh the page (F5)!');
+            return;
+        }
+        const m3d = document.getElementById('modal-3d-concept');
+        if (!m3d) return;
+
+        m3d.style.display = 'flex';
+        m3d.classList.add('active');
+
+        if (!renderer3D) {
+            init3DConceptViewer();
+        }
+
+        if (!animFrame3DId) {
+            animate3D();
+        }
+
+        // Save the config passed at open time — Reset button will restore to this snapshot
+        initialOpen3DConfig = JSON.parse(JSON.stringify(config || {}));
+
+        windowToModalConfig(config || {});
+
+        const forceResize = () => {
+            on3DWindowResize();
+            if (renderer3D && scene3D && camera3D) {
+                renderer3D.render(scene3D, camera3D);
+            }
+        };
+
+        forceResize();
+        requestAnimationFrame(forceResize);
+        setTimeout(forceResize, 50);
+        setTimeout(forceResize, 150);
+        setTimeout(forceResize, 350);
+    }
+
+    function close3DConceptModal() {
+        const m3d = document.getElementById('modal-3d-concept') || modal3D;
+        if (m3d) {
+            m3d.style.display = 'none';
+            m3d.classList.remove('active');
+        }
+        if (animFrame3DId) {
+            cancelAnimationFrame(animFrame3DId);
+            animFrame3DId = null;
+        }
+        if (transformControls3D) {
+            transformControls3D.detach();
+        }
+    }
+
+    // Helper color resolver
+    function getLightColorHex(colorName) {
+        switch (colorName) {
+            case 'red': return 0xff2233;
+            case 'blue': return 0x00d8ff;
+            case 'green': return 0x00ff66;
+            case 'yellow': return 0xffd700;
+            default: return 0xffffff;
+        }
+    }
+
+    function build3DVisionSystem(cfg) {
+        if (!components3DGroup) return;
+
+        // Safely detach transform gizmo
+        if (transformControls3D) {
+            transformControls3D.detach();
+        }
+
+        // Remove previous 3D dimension lines group
+        if (dimensionGroup3D && scene3D) {
+            scene3D.remove(dimensionGroup3D);
+            dimensionGroup3D = null;
+        }
+
+        // Clear previous meshes
+        while (components3DGroup.children.length > 0) {
+            const obj = components3DGroup.children[0];
+            components3DGroup.remove(obj);
+        }
+
+        activeLightGroup3D = null;
+        activeWorkGroup3D = null;
+        activeCamAssemblyGroup3D = null;
+
+        const wd = Math.max(30, cfg.workingDistance || 150);
+        const fovW = Math.max(10, cfg.fovWidth || 80);
+        const fovH = Math.max(10, cfg.fovHeight || 60);
+        const extLen = Math.max(0, cfg.extensionLength || 0);
+        const lightColorHex = getLightColorHex(cfg.lightColor || 'white');
+
+        // Scale factors for visualization
+        const visExtLen = extLen > 0 ? Math.max(8, extLen * 1.5) : 0;
+        const select3DLensType = document.getElementById('select-3d-lens-type');
+        const isTelecentricLens = cfg.isTelecentric || (cfg.lensName && /telecentric|tec-|tele/i.test(cfg.lensName)) || (select3DLensType && select3DLensType.value === 'telecentric');
+        const currentLensLen = isTelecentricLens ? 95 : 50;
+        const camLen = 55;
+        const camSize = 44;
+
+        // Base Positions (Y-axis pointing UP, Workpiece surface at Y=0)
+        // Ensure bottom edge of lens is ALWAYS positioned at EXACTLY Y = wd
+        const baseCamAssemblyPosY = wd + currentLensLen / 2 + visExtLen / 2;
+        const lensPosY = wd + currentLensLen / 2;
+        const extPosY = wd + currentLensLen + visExtLen / 2;
+        const camPosY = wd + currentLensLen + visExtLen + camLen / 2;
+
+        if (controls3D) {
+            controls3D.target.set(0, wd / 2, 0);
+        }
+
+        // ==================== 1. UNIFIED CAMERA + LENS ASSEMBLY ====================
+        const camLensAssemblyGroup = new THREE.Group();
+        camLensAssemblyGroup.position.set(0, baseCamAssemblyPosY, 0);
+
+        // 1A. CAMERA BODY
+        const camGroup = new THREE.Group();
+        camGroup.position.set(0, visExtLen / 2 + camLen / 2, 0);
+
+        const camGeo = new THREE.BoxGeometry(camSize, camLen, camSize);
+        const camMat = new THREE.MeshStandardMaterial({
+            color: 0x1e2638,
+            metalness: 0.8,
+            roughness: 0.3
+        });
+        const camMesh = new THREE.Mesh(camGeo, camMat);
+        camMesh.castShadow = true;
+        camGroup.add(camMesh);
+
+        // Front C-mount flange ring
+        const flangeGeo = new THREE.CylinderGeometry(15, 17, 6, 32);
+        const flangeMat = new THREE.MeshStandardMaterial({ color: 0xc0c8d0, metalness: 0.9, roughness: 0.2 });
+        const flangeMesh = new THREE.Mesh(flangeGeo, flangeMat);
+        flangeMesh.position.y = -camLen / 2 - 3;
+        camGroup.add(flangeMesh);
+
+        // Rear RJ45/USB3 connector ports
+        const portGeo = new THREE.CylinderGeometry(6, 6, 8, 16);
+        const portMat = new THREE.MeshStandardMaterial({ color: 0x0a0d14, metalness: 0.5, roughness: 0.5 });
+        const portMesh = new THREE.Mesh(portGeo, portMat);
+        portMesh.rotation.x = Math.PI / 2;
+        portMesh.position.set(0, camLen / 4, camSize / 2 + 3);
+        camGroup.add(portMesh);
+
+        // Status LED
+        const ledGeo = new THREE.SphereGeometry(2, 16, 16);
+        const ledMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
+        const ledMesh = new THREE.Mesh(ledGeo, ledMat);
+        ledMesh.position.set(-camSize / 3, camLen / 3, camSize / 2 + 1);
+        camGroup.add(ledMesh);
+
+        camLensAssemblyGroup.add(camGroup);
+
+        // 1B. EXTENSION RING
+        if (extLen > 0) {
+            const extGroup = new THREE.Group();
+            extGroup.position.set(0, 0, 0);
+
+            const ringGeo = new THREE.CylinderGeometry(16, 16, visExtLen, 32);
+            const ringMat = new THREE.MeshStandardMaterial({
+                color: 0xa0aab5,
+                metalness: 0.95,
+                roughness: 0.2
+            });
+            const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+            extGroup.add(ringMesh);
+
+            const grooveGeo = new THREE.TorusGeometry(16.2, 0.8, 16, 32);
+            const grooveMat = new THREE.MeshStandardMaterial({ color: 0x333b48, metalness: 0.8 });
+            const grooveMesh = new THREE.Mesh(grooveGeo, grooveMat);
+            grooveMesh.rotation.x = Math.PI / 2;
+            extGroup.add(grooveMesh);
+
+            camLensAssemblyGroup.add(extGroup);
+        }
+
+        // 1C. LENS ASSEMBLY
+        const lensGroup = new THREE.Group();
+
+        if (isTelecentricLens) {
+            // Detailed Industrial Telecentric Lens with Coaxial Illumination Side Port (Matching User Reference Photo)
+            const teleLen = 95;
+            lensGroup.position.set(0, -visExtLen / 2 - teleLen / 2, 0);
+
+            // 1. C-Mount Top Connection Collar
+            const topCollarGeo = new THREE.CylinderGeometry(15, 15, 14, 32);
+            const collarMat = new THREE.MeshStandardMaterial({ color: 0x1e2433, metalness: 0.85, roughness: 0.25 });
+            const topCollar = new THREE.Mesh(topCollarGeo, collarMat);
+            topCollar.position.y = teleLen / 2 - 7;
+            lensGroup.add(topCollar);
+
+            // Laser Engraved Silver Ring Collar
+            const markRingGeo = new THREE.CylinderGeometry(15.5, 15.5, 6, 32);
+            const markRingMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.1 });
+            const markRing = new THREE.Mesh(markRingGeo, markRingMat);
+            markRing.position.y = teleLen / 2 - 14;
+            lensGroup.add(markRing);
+
+            // 2. Long Slender Main Barrel Body Tube
+            const mainTubeGeo = new THREE.CylinderGeometry(14, 14, 48, 32);
+            const tubeMat = new THREE.MeshStandardMaterial({ color: 0x121620, metalness: 0.85, roughness: 0.3 });
+            const mainTube = new THREE.Mesh(mainTubeGeo, tubeMat);
+            mainTube.position.y = 5;
+            lensGroup.add(mainTube);
+
+            // 3. Perpendicular Coaxial Light Side Input Port (Side Tube matching User Photo)
+            const coaxPortGeo = new THREE.CylinderGeometry(6.5, 6.5, 18, 24);
+            const coaxPortMat = new THREE.MeshStandardMaterial({ color: 0x181e2b, metalness: 0.85, roughness: 0.3 });
+            const coaxPort = new THREE.Mesh(coaxPortGeo, coaxPortMat);
+            coaxPort.rotation.z = Math.PI / 2;
+            coaxPort.position.set(14, 2, 0);
+            lensGroup.add(coaxPort);
+
+            // Side Port Lock Thumbscrew
+            const screwGeo = new THREE.CylinderGeometry(2, 2, 6, 16);
+            const screwMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
+            const screwMesh = new THREE.Mesh(screwGeo, screwMat);
+            screwMesh.position.set(16, 8, 0);
+            lensGroup.add(screwMesh);
+
+            // 4. Wide Flared Front Objective Hood
+            const hoodGeo = new THREE.CylinderGeometry(14, 23, 30, 32);
+            const hoodMesh = new THREE.Mesh(hoodGeo, tubeMat);
+            hoodMesh.position.y = -teleLen / 2 + 16;
+            lensGroup.add(hoodMesh);
+
+            // 5. Multi-Coated Optical Glass Front Element
+            const glassGeo = new THREE.CylinderGeometry(20.5, 20.5, 2.5, 32);
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0x00f2ff,
+                emissive: 0x004466,
+                emissiveIntensity: 0.25,
+                transparent: true,
+                opacity: 0.75,
+                roughness: 0.05,
+                metalness: 0.1,
+                transmission: 0.9
+            });
+            const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+            glassMesh.position.y = -teleLen / 2;
+            lensGroup.add(glassMesh);
+
+        } else {
+            // Standard Fixed Focal Length Lens
+            const lensLen = 50;
+            lensGroup.position.set(0, -visExtLen / 2 - lensLen / 2, 0);
+
+            const lUpperGeo = new THREE.CylinderGeometry(16, 18, 18, 32);
+            const lMat1 = new THREE.MeshStandardMaterial({ color: 0x111622, metalness: 0.7, roughness: 0.3 });
+            const lUpperMesh = new THREE.Mesh(lUpperGeo, lMat1);
+            lUpperMesh.position.y = 14;
+            lensGroup.add(lUpperMesh);
+
+            const lMidGeo = new THREE.CylinderGeometry(19, 19, 16, 32);
+            const lMat2 = new THREE.MeshStandardMaterial({ color: 0x242d40, metalness: 0.6, roughness: 0.5 });
+            const lMidMesh = new THREE.Mesh(lMidGeo, lMat2);
+            lMidMesh.position.y = -2;
+            lensGroup.add(lMidMesh);
+
+            const lLowerGeo = new THREE.CylinderGeometry(18, 20, 16, 32);
+            const lLowerMesh = new THREE.Mesh(lLowerGeo, lMat1);
+            lLowerMesh.position.y = -18;
+            lensGroup.add(lLowerMesh);
+
+            const glassGeo = new THREE.CylinderGeometry(17, 17, 2, 32);
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0x88ccff,
+                transparent: true,
+                opacity: 0.65,
+                roughness: 0.1,
+                metalness: 0.1,
+                transmission: 0.9
+            });
+            const glassMesh = new THREE.Mesh(glassGeo, glassMat);
+            glassMesh.position.y = -lensLen / 2;
+            lensGroup.add(glassMesh);
+        }
+
+        camLensAssemblyGroup.add(lensGroup);
+
+        components3DGroup.add(camLensAssemblyGroup);
+        activeCamAssemblyGroup3D = camLensAssemblyGroup;
+        baseCamAssemblyPosYVal = baseCamAssemblyPosY;
+
+        // ==================== 4. LIGHTING UNIT ====================
+        const lightGroup = new THREE.Group();
+        const lightType = cfg.lightType || 'ring';
+
+        if (lightType === 'ring') {
+            // Detailed Angle Ring Light Model RLAD Series (RLAD-090050A30, RLAD-120050A30, etc.)
+            lightGroup.position.set(0, 63, 0);
+
+            const ringOuterR = 38;
+            const ringInnerR = 18;
+            const ringH = 26;
+
+            // 1. Outer Cylindrical Main Housing Body (Dark Matte Metal)
+            const housingGeo = new THREE.CylinderGeometry(ringOuterR, ringOuterR, ringH, 48);
+            const housingMat = new THREE.MeshStandardMaterial({
+                color: 0x1e222e,
+                metalness: 0.85,
+                roughness: 0.25
+            });
+            const housingMesh = new THREE.Mesh(housingGeo, housingMat);
+            lightGroup.add(housingMesh);
+
+            // Center View Pass-Through Bore Hole
+            const innerBoreGeo = new THREE.CylinderGeometry(ringInnerR - 2, ringInnerR - 2, ringH + 2, 48);
+            const innerBoreMat = new THREE.MeshStandardMaterial({ color: 0x10131a, roughness: 0.8 });
+            const innerBoreMesh = new THREE.Mesh(innerBoreGeo, innerBoreMat);
+            lightGroup.add(innerBoreMesh);
+
+            // 2. Angled Conical Inner Recess Face (Angle 30 degrees)
+            const coneRecessGeo = new THREE.CylinderGeometry(ringInnerR, ringOuterR - 4, ringH - 4, 48, 1, true);
+            const coneRecessMat = new THREE.MeshStandardMaterial({ color: 0x151822, metalness: 0.9, roughness: 0.2, side: THREE.DoubleSide });
+            const coneRecessMesh = new THREE.Mesh(coneRecessGeo, coneRecessMat);
+            coneRecessMesh.position.y = -1;
+            lightGroup.add(coneRecessMesh);
+
+            // 3. Glowing LED Angled Diffuser Ring Face
+            const diffRingGeo = new THREE.CylinderGeometry(ringInnerR + 2, ringOuterR - 6, 2, 48, 1, true);
+            const diffRingMat = new THREE.MeshStandardMaterial({
+                color: lightColorHex,
+                emissive: lightColorHex,
+                emissiveIntensity: 0.85,
+                roughness: 0.2,
+                side: THREE.DoubleSide
+            });
+            const diffRingMesh = new THREE.Mesh(diffRingGeo, diffRingMat);
+            diffRingMesh.position.y = -ringH / 2 + 3;
+            lightGroup.add(diffRingMesh);
+
+            // Inner & Outer Bezel Rims
+            const outerRimGeo = new THREE.TorusGeometry(ringOuterR - 2, 1.2, 16, 48);
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0x0f121a, metalness: 0.9, roughness: 0.2 });
+            const outerRimMesh = new THREE.Mesh(outerRimGeo, rimMat);
+            outerRimMesh.rotation.x = Math.PI / 2;
+            outerRimMesh.position.y = -ringH / 2 + 1;
+            lightGroup.add(outerRimMesh);
+
+            const innerRimGeo = new THREE.TorusGeometry(ringInnerR + 1, 1.2, 16, 48);
+            const innerRimMesh = new THREE.Mesh(innerRimGeo, rimMat);
+            innerRimMesh.rotation.x = Math.PI / 2;
+            innerRimMesh.position.y = -ringH / 2 + 1;
+            lightGroup.add(innerRimMesh);
+
+            // 4. Side Screw Mounting Holes
+            const holeGeo = new THREE.CylinderGeometry(1.6, 1.6, 4, 16);
+            const holeMat = new THREE.MeshStandardMaterial({ color: 0x080a0f, roughness: 0.8 });
+            for (let a = 0; a < Math.PI * 2; a += Math.PI / 2) {
+                const hMesh = new THREE.Mesh(holeGeo, holeMat);
+                hMesh.position.set((ringOuterR + 1) * Math.cos(a), ringH / 4, (ringOuterR + 1) * Math.sin(a));
+                hMesh.rotation.x = Math.PI / 2;
+                hMesh.rotation.z = a;
+                lightGroup.add(hMesh);
+            }
+
+            // 5. Power Cable, Strain Relief Boot & Connector Plug
+            const cableGroup = new THREE.Group();
+            cableGroup.position.set(-ringOuterR, -ringH / 4, 0);
+
+            // Boot sleeve
+            const bootGeo = new THREE.CylinderGeometry(3.5, 4.5, 10, 16);
+            const bootMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.6 });
+            const bootMesh = new THREE.Mesh(bootGeo, bootMat);
+            bootMesh.rotation.z = Math.PI / 2;
+            bootMesh.position.x = -5;
+            cableGroup.add(bootMesh);
+
+            // Cable curve path
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-10, 0, 0),
+                new THREE.Vector3(-22, -4, 0),
+                new THREE.Vector3(-30, -12, 10),
+                new THREE.Vector3(-38, -18, 18)
+            ]);
+            const tubeGeo = new THREE.TubeGeometry(curve, 16, 2.5, 12, false);
+            const cableMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.5 });
+            const tubeMesh = new THREE.Mesh(tubeGeo, cableMat);
+            cableGroup.add(tubeMesh);
+
+            // Connector Plug
+            const plugGeo = new THREE.BoxGeometry(10, 8, 14);
+            const plugMat = new THREE.MeshStandardMaterial({ color: 0x1c202b, roughness: 0.3, metalness: 0.5 });
+            const plugMesh = new THREE.Mesh(plugGeo, plugMat);
+            plugMesh.position.set(-40, -20, 22);
+            plugMesh.rotation.y = Math.PI / 4;
+            cableGroup.add(plugMesh);
+
+            lightGroup.add(cableGroup);
+
+            // Downward Point Light
+            const pointLight = new THREE.PointLight(lightColorHex, 1.6, wd * 2.2);
+            pointLight.position.set(0, -ringH / 2 - 5, 0);
+            lightGroup.add(pointLight);
+
+        } else if (lightType === 'ring-flat') {
+            // Detailed Ring Flat Light Model (Low-Profile Wide Diffuse Ring)
+            lightGroup.position.set(0, 63, 0);
+
+            const ringOuterR = 46;
+            const ringInnerR = 16;
+            const ringH = 15;
+
+            // 1. Low-Profile Cylindrical Outer Main Housing Body
+            const housingGeo = new THREE.CylinderGeometry(ringOuterR, ringOuterR, ringH, 48);
+            const housingMat = new THREE.MeshStandardMaterial({
+                color: 0x1c202a,
+                metalness: 0.85,
+                roughness: 0.25
+            });
+            const housingMesh = new THREE.Mesh(housingGeo, housingMat);
+            lightGroup.add(housingMesh);
+
+            // Center View Pass-Through Bore Hole
+            const innerBoreGeo = new THREE.CylinderGeometry(ringInnerR - 2, ringInnerR - 2, ringH + 2, 48);
+            const innerBoreMat = new THREE.MeshStandardMaterial({ color: 0x0e2e1a, roughness: 0.7 }); // Inner PCB green rim detail
+            const innerBoreMesh = new THREE.Mesh(innerBoreGeo, innerBoreMat);
+            lightGroup.add(innerBoreMesh);
+
+            // 2. Flat Wide LED Diffuser Ring Face
+            const diffRingGeo = new THREE.RingGeometry(ringInnerR + 2, ringOuterR - 2, 48);
+            const diffRingMat = new THREE.MeshStandardMaterial({
+                color: lightColorHex,
+                emissive: lightColorHex,
+                emissiveIntensity: 0.85,
+                roughness: 0.2,
+                side: THREE.DoubleSide
+            });
+            const diffRingMesh = new THREE.Mesh(diffRingGeo, diffRingMat);
+            diffRingMesh.rotation.x = Math.PI / 2;
+            diffRingMesh.position.y = -ringH / 2 - 0.5;
+            lightGroup.add(diffRingMesh);
+
+            // Inner & Outer Bezel Rims
+            const outerRimGeo = new THREE.TorusGeometry(ringOuterR - 1, 1, 16, 48);
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0x0f121a, metalness: 0.9, roughness: 0.2 });
+            const outerRimMesh = new THREE.Mesh(outerRimGeo, rimMat);
+            outerRimMesh.rotation.x = Math.PI / 2;
+            outerRimMesh.position.y = -ringH / 2 - 0.5;
+            lightGroup.add(outerRimMesh);
+
+            const innerRimGeo = new THREE.TorusGeometry(ringInnerR + 1, 1, 16, 48);
+            const innerRimMesh = new THREE.Mesh(innerRimGeo, rimMat);
+            innerRimMesh.rotation.x = Math.PI / 2;
+            innerRimMesh.position.y = -ringH / 2 - 0.5;
+            lightGroup.add(innerRimMesh);
+
+            // 3. Front Face Screw Rivets (6 Screw Heads along flat diffuser rim)
+            const screwGeo = new THREE.CylinderGeometry(1.5, 1.5, 2, 12);
+            const screwMat = new THREE.MeshStandardMaterial({ color: 0x808c9c, metalness: 0.9, roughness: 0.2 });
+            for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+                const sRadius = (ringOuterR + ringInnerR) / 2;
+                const sMesh = new THREE.Mesh(screwGeo, screwMat);
+                sMesh.position.set(sRadius * Math.cos(a), -ringH / 2 - 1, sRadius * Math.sin(a));
+                lightGroup.add(sMesh);
+            }
+
+            // 4. Power Cable, Strain Relief Boot & Connector Plug
+            const cableGroup = new THREE.Group();
+            cableGroup.position.set(-ringOuterR, 0, 0);
+
+            // Boot sleeve
+            const bootGeo = new THREE.CylinderGeometry(3.5, 4.5, 10, 16);
+            const bootMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.6 });
+            const bootMesh = new THREE.Mesh(bootGeo, bootMat);
+            bootMesh.rotation.z = Math.PI / 2;
+            bootMesh.position.x = -5;
+            cableGroup.add(bootMesh);
+
+            // Cable curve path
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-10, 0, 0),
+                new THREE.Vector3(-22, -4, 0),
+                new THREE.Vector3(-30, -12, 10),
+                new THREE.Vector3(-38, -18, 18)
+            ]);
+            const tubeGeo = new THREE.TubeGeometry(curve, 16, 2.5, 12, false);
+            const cableMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.5 });
+            const tubeMesh = new THREE.Mesh(tubeGeo, cableMat);
+            cableGroup.add(tubeMesh);
+
+            // Connector Plug
+            const plugGeo = new THREE.BoxGeometry(10, 8, 14);
+            const plugMat = new THREE.MeshStandardMaterial({ color: 0x1c202b, roughness: 0.3, metalness: 0.5 });
+            const plugMesh = new THREE.Mesh(plugGeo, plugMat);
+            plugMesh.position.set(-40, -20, 22);
+            plugMesh.rotation.y = Math.PI / 4;
+            cableGroup.add(plugMesh);
+
+            lightGroup.add(cableGroup);
+
+            // Wide Downward Point Light
+            const pointLight = new THREE.PointLight(lightColorHex, 1.8, wd * 2.5);
+            pointLight.position.set(0, -ringH / 2 - 5, 0);
+            lightGroup.add(pointLight);
+
+        } else if (lightType === 'coaxial') {
+            // Detailed Coaxial Light Model CO-060060 based on industrial design specs
+            lightGroup.position.set(0, 74, 0);
+
+            const coaxW = 55;
+            const coaxH = 48;
+            const coaxD = 55;
+
+            // 1. Main Matte Dark Metallic Body Box
+            const boxGeo = new THREE.BoxGeometry(coaxW, coaxH, coaxD);
+            const boxMat = new THREE.MeshStandardMaterial({
+                color: 0x222733,
+                metalness: 0.85,
+                roughness: 0.25
+            });
+            const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+            lightGroup.add(boxMesh);
+
+            // Inner Pass-Through Hole for Lens View
+            const boreGeo = new THREE.CylinderGeometry(14, 14, coaxH + 2, 32);
+            const boreMat = new THREE.MeshStandardMaterial({ color: 0x11151c, roughness: 0.8 });
+            const boreMesh = new THREE.Mesh(boreGeo, boreMat);
+            lightGroup.add(boreMesh);
+
+            // 2. Top Cyan Glass Aperture Window
+            const topFrameGeo = new THREE.BoxGeometry(coaxW - 6, 2, coaxD - 6);
+            const topFrameMat = new THREE.MeshStandardMaterial({ color: 0x181d28, metalness: 0.9, roughness: 0.2 });
+            const topFrameMesh = new THREE.Mesh(topFrameGeo, topFrameMat);
+            topFrameMesh.position.y = coaxH / 2 + 1;
+            lightGroup.add(topFrameMesh);
+
+            const cyanGlassGeo = new THREE.BoxGeometry(coaxW - 14, 2.5, coaxD - 14);
+            const cyanGlassMat = new THREE.MeshStandardMaterial({
+                color: 0x00f2ff,
+                emissive: 0x00c4d4,
+                emissiveIntensity: 0.7,
+                roughness: 0.1,
+                metalness: 0.1
+            });
+            const cyanGlassMesh = new THREE.Mesh(cyanGlassGeo, cyanGlassMat);
+            cyanGlassMesh.position.y = coaxH / 2 + 1.5;
+            lightGroup.add(cyanGlassMesh);
+
+            // Top Corner Screw Rivets
+            const screwGeo = new THREE.CylinderGeometry(1.5, 1.5, 3, 12);
+            const screwMat = new THREE.MeshStandardMaterial({ color: 0x808c9c, metalness: 0.9, roughness: 0.2 });
+
+            [[-coaxW / 2 + 6, -coaxD / 2 + 6], [coaxW / 2 - 6, -coaxD / 2 + 6],
+            [-coaxW / 2 + 6, coaxD / 2 - 6], [coaxW / 2 - 6, coaxD / 2 - 6]].forEach(pos => {
+                const screwMesh = new THREE.Mesh(screwGeo, screwMat);
+                screwMesh.position.set(pos[0], coaxH / 2 + 2, pos[1]);
+                lightGroup.add(screwMesh);
+            });
+
+            // 3. Side Panel with Horizontal Heat-Sink Fins Slits
+            const finGroup = new THREE.Group();
+            finGroup.position.set(0, 0, coaxD / 2 + 1);
+
+            for (let i = -2; i <= 2; i++) {
+                const finGeo = new THREE.BoxGeometry(coaxW - 12, 3, 2);
+                const finMat = new THREE.MeshStandardMaterial({ color: 0x141822, metalness: 0.8, roughness: 0.4 });
+                const finMesh = new THREE.Mesh(finGeo, finMat);
+                finMesh.position.y = i * 7;
+                finGroup.add(finMesh);
+            }
+            lightGroup.add(finGroup);
+
+            // 4. Power Cable & Industrial Connector Plug
+            const cableGroup = new THREE.Group();
+            cableGroup.position.set(coaxW / 2 + 2, coaxH / 4, 0);
+
+            // Cable curve path
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(12, 5, 0),
+                new THREE.Vector3(25, 2, -10),
+                new THREE.Vector3(32, -4, -18)
+            ]);
+            const tubeGeo = new THREE.TubeGeometry(curve, 20, 2.5, 12, false);
+            const cableMat = new THREE.MeshStandardMaterial({ color: 0x12141a, roughness: 0.6 });
+            const tubeMesh = new THREE.Mesh(tubeGeo, cableMat);
+            cableGroup.add(tubeMesh);
+
+            // Black 2-Pin Connector Plug at tip
+            const plugGeo = new THREE.BoxGeometry(10, 8, 14);
+            const plugMat = new THREE.MeshStandardMaterial({ color: 0x1a1d26, roughness: 0.3, metalness: 0.5 });
+            const plugMesh = new THREE.Mesh(plugGeo, plugMat);
+            plugMesh.position.set(33, -5, -22);
+            plugMesh.rotation.y = -Math.PI / 4;
+            cableGroup.add(plugMesh);
+
+            lightGroup.add(cableGroup);
+
+            // 5. Internal 45-Degree Beam Splitter Glass Mirror
+            const mirrorGeo = new THREE.PlaneGeometry(30, 30);
+            const mirrorMat = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.4,
+                roughness: 0.1,
+                metalness: 0.9,
+                side: THREE.DoubleSide
+            });
+            const mirrorMesh = new THREE.Mesh(mirrorGeo, mirrorMat);
+            mirrorMesh.rotation.x = Math.PI / 4;
+            lightGroup.add(mirrorMesh);
+
+            // Downward Coaxial Point Light
+            const coaxialLight = new THREE.PointLight(lightColorHex, 1.4, wd * 2);
+            coaxialLight.position.set(0, -coaxH / 2 - 5, 0);
+            lightGroup.add(coaxialLight);
+
+        } else if (lightType === 'dome') {
+            // Detailed Industrial Dome Diffuse Light DM Series (DM-090, DM-120, DM-160)
+            lightGroup.position.set(0, 80, 0);
+
+            const domeR = Math.max(38, fovW * 0.65);
+            const domeH = domeR * 0.85;
+
+            // 1. Outer Dark Matte Anodized Metallic Hemispherical Dome Hood (Curving UPWARDS)
+            const domeGeo = new THREE.SphereGeometry(domeR, 48, 32, 0, Math.PI * 2, 0.22, Math.PI / 2 - 0.22);
+            const domeMat = new THREE.MeshStandardMaterial({
+                color: 0x1b1f2b,
+                metalness: 0.85,
+                roughness: 0.25,
+                side: THREE.DoubleSide
+            });
+            const domeMesh = new THREE.Mesh(domeGeo, domeMat);
+            domeMesh.rotation.x = 0; // Dome curves UPWARDS with top camera opening
+            lightGroup.add(domeMesh);
+
+            // Inner Diffuse White Reflective Dome Cavity Coating
+            const innerDomeGeo = new THREE.SphereGeometry(domeR - 2, 48, 32, 0, Math.PI * 2, 0.24, Math.PI / 2 - 0.24);
+            const innerDomeMat = new THREE.MeshStandardMaterial({
+                color: 0xf5f7fa,
+                roughness: 0.95,
+                metalness: 0.05,
+                side: THREE.DoubleSide
+            });
+            const innerDomeMesh = new THREE.Mesh(innerDomeGeo, innerDomeMat);
+            innerDomeMesh.rotation.x = 0;
+            lightGroup.add(innerDomeMesh);
+
+            // 2. Top Circular Camera Lens View Hole Ring (Top Aperture Opening under Camera)
+            const topRingGeo = new THREE.CylinderGeometry(domeR * 0.28, domeR * 0.32, 6, 32);
+            const topRingMat = new THREE.MeshStandardMaterial({
+                color: 0xeef2f7,
+                metalness: 0.2,
+                roughness: 0.3
+            });
+            const topRingMesh = new THREE.Mesh(topRingGeo, topRingMat);
+            topRingMesh.position.y = domeR * 0.92;
+            lightGroup.add(topRingMesh);
+
+            // 3. Heavy Bottom Base Flange Plate at Rim Base
+            const baseRingGeo = new THREE.CylinderGeometry(domeR + 5, domeR + 5, 12, 48);
+            const baseRingMat = new THREE.MeshStandardMaterial({ color: 0x141822, metalness: 0.9, roughness: 0.2 });
+            const baseRingMesh = new THREE.Mesh(baseRingGeo, baseRingMat);
+            baseRingMesh.position.y = 4;
+            lightGroup.add(baseRingMesh);
+
+            const baseLipGeo = new THREE.CylinderGeometry(domeR + 9, domeR + 9, 4, 48);
+            const baseLipMesh = new THREE.Mesh(baseLipGeo, baseRingMat);
+            baseLipMesh.position.y = -1;
+            lightGroup.add(baseLipMesh);
+
+            // Base Perimeter Mounting Screw Rivets (6 Screws)
+            const screwGeo = new THREE.CylinderGeometry(1.6, 1.6, 3, 12);
+            const screwMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI) / 3;
+                const screwMesh = new THREE.Mesh(screwGeo, screwMat);
+                screwMesh.position.set((domeR + 6) * Math.cos(angle), 1, (domeR + 6) * Math.sin(angle));
+                lightGroup.add(screwMesh);
+            }
+
+            // 4. Side Metallic Cable Gland & Strain Relief Boot
+            const glandGeo = new THREE.CylinderGeometry(5, 5, 12, 16);
+            const glandMat = new THREE.MeshStandardMaterial({ color: 0xa0aab5, metalness: 0.95, roughness: 0.2 });
+            const glandMesh = new THREE.Mesh(glandGeo, glandMat);
+            glandMesh.rotation.z = Math.PI / 2;
+            glandMesh.position.set(domeR + 8, 4, 0);
+            lightGroup.add(glandMesh);
+
+            // Catmull-Rom Cable Path
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(domeR + 12, 4, 0),
+                new THREE.Vector3(domeR + 24, 6, 8),
+                new THREE.Vector3(domeR + 32, 2, 20)
+            ]);
+            const tubeGeo = new THREE.TubeGeometry(curve, 16, 2.5, 12, false);
+            const cableMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.6 });
+            const tubeMesh = new THREE.Mesh(tubeGeo, cableMat);
+            lightGroup.add(tubeMesh);
+
+            // Black 2-Pin Connector Plug
+            const plugGeo = new THREE.BoxGeometry(9, 7, 14);
+            const plugMat = new THREE.MeshStandardMaterial({ color: 0x1c202b, roughness: 0.3, metalness: 0.5 });
+            const plugMesh = new THREE.Mesh(plugGeo, plugMat);
+            plugMesh.position.set(domeR + 33, 1, 26);
+            plugMesh.rotation.y = Math.PI / 4;
+            lightGroup.add(plugMesh);
+
+            // 5. Internal Glowing LED Ring Array at Bottom Perimeter
+            const ledRingGeo = new THREE.RingGeometry(domeR - 12, domeR - 3, 32);
+            const ledRingMat = new THREE.MeshBasicMaterial({ color: lightColorHex, side: THREE.DoubleSide });
+            const ledRingMesh = new THREE.Mesh(ledRingGeo, ledRingMat);
+            ledRingMesh.rotation.x = Math.PI / 2;
+            ledRingMesh.position.y = 8;
+            lightGroup.add(ledRingMesh);
+
+            // Downward Shadowless Diffuse Point Light
+            const domeLightSource = new THREE.PointLight(lightColorHex, 1.8, wd * 2.2);
+            domeLightSource.position.set(0, domeH * 0.4, 0);
+            lightGroup.add(domeLightSource);
+
+        } else if (lightType === 'backlight') {
+            // Detailed Industrial Edge-lit Backlight Plate FL Series (FL-100100, FL-150150, FL-200200)
+            // Positioned UNDERNEATH/BEHIND the target workpiece for silhouette imaging
+            lightGroup.position.set(0, -32, 0);
+
+            const backW = Math.max(160, fovW * 1.6);
+            const backD = Math.max(130, fovH * 1.6);
+            const backH = 16;
+
+            // 1. Dark Anodized Aluminum Outer Housing Frame
+            const frameGeo = new THREE.BoxGeometry(backW, backH, backD);
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: 0x181c26,
+                metalness: 0.85,
+                roughness: 0.25
+            });
+            const frameMesh = new THREE.Mesh(frameGeo, frameMat);
+            lightGroup.add(frameMesh);
+
+            // Silver Anodized Outer Bevel Trim Lip
+            const lipGeo = new THREE.BoxGeometry(backW + 4, 3, backD + 4);
+            const lipMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+            const lipMesh = new THREE.Mesh(lipGeo, lipMat);
+            lipMesh.position.y = -backH / 2 + 1.5;
+            lightGroup.add(lipMesh);
+
+            // 2. Uniform High-Diffusion Translucent Glowing Acrylic Top Plate Surface
+            const diffPlateGeo = new THREE.BoxGeometry(backW - 12, 2.5, backD - 12);
+            const diffPlateMat = new THREE.MeshStandardMaterial({
+                color: lightColorHex,
+                emissive: lightColorHex,
+                emissiveIntensity: 0.95,
+                roughness: 0.1,
+                metalness: 0.05
+            });
+            const diffPlateMesh = new THREE.Mesh(diffPlateGeo, diffPlateMat);
+            diffPlateMesh.position.y = backH / 2 + 1;
+            lightGroup.add(diffPlateMesh);
+
+            // Inner Recessed Dark Rim Border around Glowing Diffuser
+            const rimBorderGeo = new THREE.BoxGeometry(backW - 6, 2, backD - 6);
+            const rimBorderMat = new THREE.MeshStandardMaterial({ color: 0x0e1117, roughness: 0.6 });
+            const rimBorderMesh = new THREE.Mesh(rimBorderGeo, rimBorderMat);
+            rimBorderMesh.position.y = backH / 2 + 0.5;
+            lightGroup.add(rimBorderMesh);
+
+            // 3. Side Metallic Cable Gland & Strain Relief Boot
+            const glandGeo = new THREE.CylinderGeometry(4.5, 4.5, 10, 16);
+            const glandMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+            const glandMesh = new THREE.Mesh(glandGeo, glandMat);
+            glandMesh.rotation.z = Math.PI / 2;
+            glandMesh.position.set(backW / 2 + 5, 0, 0);
+            lightGroup.add(glandMesh);
+
+            // Flexible Black Power Cable
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(backW / 2 + 10, 0, 0),
+                new THREE.Vector3(backW / 2 + 20, 2, 8),
+                new THREE.Vector3(backW / 2 + 28, -2, 18)
+            ]);
+            const tubeGeo = new THREE.TubeGeometry(curve, 16, 2.5, 12, false);
+            const cableMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.6 });
+            const tubeMesh = new THREE.Mesh(tubeGeo, cableMat);
+            lightGroup.add(tubeMesh);
+
+            // Connector Plug at tip
+            const plugGeo = new THREE.BoxGeometry(9, 7, 14);
+            const plugMat = new THREE.MeshStandardMaterial({ color: 0x1c202b, roughness: 0.3, metalness: 0.5 });
+            const plugMesh = new THREE.Mesh(plugGeo, plugMat);
+            plugMesh.position.set(backW / 2 + 29, -3, 24);
+            plugMesh.rotation.y = Math.PI / 4;
+            lightGroup.add(plugMesh);
+
+            // 4. Upward Projecting Backlight Illumination Light Source
+            const backLightSource = new THREE.PointLight(lightColorHex, 2.0, wd * 2.5);
+            backLightSource.position.set(0, 8, 0);
+            lightGroup.add(backLightSource);
+
+        } else if (lightType === 'bar') {
+            // Sleek Industrial Dual Bar Light Fixtures BA Series (Matching User Diagram)
+            lightGroup.position.set(0, 61, 0);
+
+            function createSingleBarLightMesh(length, height, depth, colorHex) {
+                const barGroup = new THREE.Group();
+
+                // 1. Sleek Dark Metallic Anodized Main Body Frame Box
+                const bodyGeo = new THREE.BoxGeometry(length, height, depth);
+                const bodyMat = new THREE.MeshStandardMaterial({
+                    color: 0x1e2433,
+                    metalness: 0.85,
+                    roughness: 0.2
+                });
+                const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+                barGroup.add(bodyMesh);
+
+                // Metallic Silver Bevel Frame Trim
+                const trimGeo = new THREE.BoxGeometry(length + 2, height + 2, depth - 4);
+                const trimMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+                const trimMesh = new THREE.Mesh(trimGeo, trimMat);
+                barGroup.add(trimMesh);
+
+                // 2. Front High-Emissive Diffuser Panel (Glowing LED Surface)
+                const diffFrameGeo = new THREE.BoxGeometry(length - 6, height - 4, 3);
+                const diffFrameMat = new THREE.MeshStandardMaterial({ color: 0x0d1117, roughness: 0.5 });
+                const diffFrameMesh = new THREE.Mesh(diffFrameGeo, diffFrameMat);
+                diffFrameMesh.position.y = -height / 2 - 1.5;
+                barGroup.add(diffFrameMesh);
+
+                const diffPanelGeo = new THREE.BoxGeometry(length - 12, height - 8, 3.5);
+                const diffPanelMat = new THREE.MeshStandardMaterial({
+                    color: colorHex,
+                    emissive: colorHex,
+                    emissiveIntensity: 0.95,
+                    roughness: 0.1,
+                    metalness: 0.05
+                });
+                const diffPanelMesh = new THREE.Mesh(diffPanelGeo, diffPanelMat);
+                diffPanelMesh.position.y = -height / 2 - 2;
+                barGroup.add(diffPanelMesh);
+
+                // 3. Four Corner Hex Screw Rivets
+                const screwGeo = new THREE.CylinderGeometry(1.6, 1.6, 3, 12);
+                const screwMat = new THREE.MeshStandardMaterial({ color: 0xc4cdd5, metalness: 0.95, roughness: 0.1 });
+                [[-length / 2 + 8, -depth / 2 + 6], [length / 2 - 8, -depth / 2 + 6],
+                [-length / 2 + 8, depth / 2 - 6], [length / 2 - 8, depth / 2 - 6]].forEach(pos => {
+                    const screwMesh = new THREE.Mesh(screwGeo, screwMat);
+                    screwMesh.position.set(pos[0], height / 2 + 1.5, pos[1]);
+                    barGroup.add(screwMesh);
+                });
+
+                // 4. Rear Power Connector Jack Socket (Flush-Mounted)
+                const jackGeo = new THREE.CylinderGeometry(4, 4, 6, 16);
+                const jackMat = new THREE.MeshStandardMaterial({ color: 0x11131a, metalness: 0.8, roughness: 0.4 });
+                const jackMesh = new THREE.Mesh(jackGeo, jackMat);
+                jackMesh.position.set(length / 2 + 2, 0, 0);
+                jackMesh.rotation.z = Math.PI / 2;
+                barGroup.add(jackMesh);
+
+                return barGroup;
+            }
+
+            const barLen = Math.max(70, fovW * 0.85);
+            const barH = 22;
+            const barD = 35;
+
+            // Left Bar Light Fixture (Lying horizontally along Z-axis, angled 45° inwards & downwards directly aiming at workpiece, identical to square-bar)
+            const leftBar = createSingleBarLightMesh(barLen, barH, barD, lightColorHex);
+            leftBar.position.set(-fovW * 0.75 - 25, 0, 0);
+            leftBar.rotation.order = 'YXZ';
+            leftBar.rotation.set(-Math.PI / 4, Math.PI / 2, 0);
+            lightGroup.add(leftBar);
+
+            // Right Bar Light Fixture (Lying horizontally along Z-axis, angled 45° inwards & downwards directly aiming at workpiece, identical to square-bar)
+            const rightBar = createSingleBarLightMesh(barLen, barH, barD, lightColorHex);
+            rightBar.position.set(fovW * 0.75 + 25, 0, 0);
+            rightBar.rotation.order = 'YXZ';
+            rightBar.rotation.set(Math.PI / 4, Math.PI / 2, 0);
+            lightGroup.add(rightBar);
+
+            // Spotlights pointing directly down-inward at center target workpiece
+            const spot1 = new THREE.SpotLight(lightColorHex, 1.8, wd * 2.2, Math.PI / 4, 0.5);
+            spot1.position.set(-fovW * 0.75 - 25, 0, 0);
+            spot1.target.position.set(0, -wd * 0.45, 0);
+            lightGroup.add(spot1);
+            lightGroup.add(spot1.target);
+
+            const spot2 = new THREE.SpotLight(lightColorHex, 1.8, wd * 2.2, Math.PI / 4, 0.5);
+            spot2.position.set(fovW * 0.75 + 25, 0, 0);
+            spot2.target.position.set(0, -wd * 0.45, 0);
+            lightGroup.add(spot2);
+            lightGroup.add(spot2.target);
+
+        } else if (lightType === 'square-bar') {
+            // Detailed 4-Side Square Bar Light BA4 Series (BA4-020160160, BA4-040120120, BA4-040140140)
+            // Matching User CAD Model: Top square frame plate with 4 suspended bar lights & 4-sided light shroud cone
+            lightGroup.position.set(0, 61, 0);
+
+            const barLen = Math.max(75, Math.max(fovW, fovH) * 0.85);
+            const barH = 22;
+            const barD = 32;
+            const squareDist = barLen * 0.55 + 14;
+
+            function createSingleBarLightMesh(length, height, depth, colorHex) {
+                const barGroup = new THREE.Group();
+
+                // 1. Sleek Dark Anodized Aluminum Main Body Frame Box
+                const bodyGeo = new THREE.BoxGeometry(length, height, depth);
+                const bodyMat = new THREE.MeshStandardMaterial({
+                    color: 0x222838,
+                    metalness: 0.85,
+                    roughness: 0.2
+                });
+                const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+                barGroup.add(bodyMesh);
+
+                // 2. Rear Outer Heat-Sink Cooling Fins Slits
+                const finMat = new THREE.MeshStandardMaterial({ color: 0x141824, metalness: 0.9, roughness: 0.3 });
+                for (let i = -3; i <= 3; i++) {
+                    const finGeo = new THREE.BoxGeometry(length - 8, 2, 2);
+                    const finMesh = new THREE.Mesh(finGeo, finMat);
+                    finMesh.position.set(0, height / 2 + 1, i * 4);
+                    barGroup.add(finMesh);
+                }
+
+                // 3. Front Inner Recessed Diffuser Panel (Glowing LED Surface)
+                const diffFrameGeo = new THREE.BoxGeometry(length - 6, height - 4, 3);
+                const diffFrameMat = new THREE.MeshStandardMaterial({ color: 0x0d1117, roughness: 0.5 });
+                const diffFrameMesh = new THREE.Mesh(diffFrameGeo, diffFrameMat);
+                diffFrameMesh.position.y = -height / 2 - 1.5;
+                barGroup.add(diffFrameMesh);
+
+                const diffPanelGeo = new THREE.BoxGeometry(length - 12, height - 8, 3.5);
+                const diffPanelMat = new THREE.MeshStandardMaterial({
+                    color: colorHex,
+                    emissive: colorHex,
+                    emissiveIntensity: 0.95,
+                    roughness: 0.1,
+                    metalness: 0.05
+                });
+                const diffPanelMesh = new THREE.Mesh(diffPanelGeo, diffPanelMat);
+                diffPanelMesh.position.y = -height / 2 - 2;
+                barGroup.add(diffPanelMesh);
+
+                // 4. End Mounting Hinge Bracket Plates
+                const bracketGeo = new THREE.BoxGeometry(12, 16, 18);
+                const bracketMat = new THREE.MeshStandardMaterial({ color: 0x11141f, metalness: 0.8, roughness: 0.4 });
+
+                const bMesh1 = new THREE.Mesh(bracketGeo, bracketMat);
+                bMesh1.position.set(-length / 2 + 6, height / 2 + 5, 0);
+                barGroup.add(bMesh1);
+
+                const bMesh2 = new THREE.Mesh(bracketGeo, bracketMat);
+                bMesh2.position.set(length / 2 - 6, height / 2 + 5, 0);
+                barGroup.add(bMesh2);
+
+                return barGroup;
+            }
+
+            // 1. Top Central Square Base Mounting Plate Frame
+            const frameGroup = new THREE.Group();
+            const plateMat = new THREE.MeshStandardMaterial({ color: 0x181c28, metalness: 0.9, roughness: 0.3 });
+
+            const plateOuterW = squareDist * 2 + 36;
+            const plateInnerW = squareDist * 1.15;
+
+            // 4 Perimeter Frame Plates forming square cutout plate
+            const topPlateGeo = new THREE.BoxGeometry(plateOuterW, 6, (plateOuterW - plateInnerW) / 2);
+            const topPlate = new THREE.Mesh(topPlateGeo, plateMat);
+            topPlate.position.set(0, 10, -(plateInnerW + (plateOuterW - plateInnerW) / 2) / 2);
+            frameGroup.add(topPlate);
+
+            const botPlate = topPlate.clone();
+            botPlate.position.set(0, 10, (plateInnerW + (plateOuterW - plateInnerW) / 2) / 2);
+            frameGroup.add(botPlate);
+
+            const sidePlateGeo = new THREE.BoxGeometry((plateOuterW - plateInnerW) / 2, 6, plateInnerW);
+            const leftPlate = new THREE.Mesh(sidePlateGeo, plateMat);
+            leftPlate.position.set(-(plateInnerW + (plateOuterW - plateInnerW) / 2) / 2, 10, 0);
+            frameGroup.add(leftPlate);
+
+            const rightPlate = leftPlate.clone();
+            rightPlate.position.set((plateInnerW + (plateOuterW - plateInnerW) / 2) / 2, 10, 0);
+            frameGroup.add(rightPlate);
+
+            // 4 Corner Hinge Mount Brackets
+            const cornerPlateGeo = new THREE.BoxGeometry(26, 8, 26);
+            [[-squareDist - 8, -squareDist - 8], [squareDist + 8, -squareDist - 8],
+            [-squareDist - 8, squareDist + 8], [squareDist + 8, squareDist + 8]].forEach(cPos => {
+                const sMesh = new THREE.Mesh(cornerPlateGeo, plateMat);
+                sMesh.position.set(cPos[0], 6, cPos[1]);
+                frameGroup.add(sMesh);
+            });
+
+            lightGroup.add(frameGroup);
+
+            // 2. Four Perimeter Bar Light Fixtures Suspended Underneath & Angled 45° Inwards Aiming at Workpiece Target
+            // North Bar (-Z)
+            const topBar = createSingleBarLightMesh(barLen, barH, barD, lightColorHex);
+            topBar.position.set(0, -6, -squareDist);
+            topBar.rotation.x = -Math.PI / 4;
+            lightGroup.add(topBar);
+
+            // South Bar (+Z)
+            const bottomBar = createSingleBarLightMesh(barLen, barH, barD, lightColorHex);
+            bottomBar.position.set(0, -6, squareDist);
+            bottomBar.rotation.x = Math.PI / 4;
+            lightGroup.add(bottomBar);
+
+            // West Bar (-X)
+            const leftBar = createSingleBarLightMesh(barLen, barH, barD, lightColorHex);
+            leftBar.position.set(-squareDist, -6, 0);
+            leftBar.rotation.order = 'YXZ';
+            leftBar.rotation.set(-Math.PI / 4, Math.PI / 2, 0);
+            lightGroup.add(leftBar);
+
+            // East Bar (+X)
+            const rightBar = createSingleBarLightMesh(barLen, barH, barD, lightColorHex);
+            rightBar.position.set(squareDist, -6, 0);
+            rightBar.rotation.order = 'YXZ';
+            rightBar.rotation.set(Math.PI / 4, Math.PI / 2, 0);
+            lightGroup.add(rightBar);
+
+            // 3. Translucent 4-Sided Light Pyramid Shroud Cone (Projecting down onto Workpiece Target)
+            const pyramidGeo = new THREE.BufferGeometry();
+            const topY = -12;
+            const botY = -wd * 0.45;
+            const topW = squareDist * 0.75;
+            const topD = squareDist * 0.75;
+            const botW = fovW * 0.9;
+            const botD = fovH * 0.9;
+
+            const vertices = new Float32Array([
+                // North face
+                -topW, topY, -topD, topW, topY, -topD, botW, botY, -botD,
+                -topW, topY, -topD, botW, botY, -botD, -botW, botY, -botD,
+                // South face
+                topW, topY, topD, -topW, topY, topD, -botW, botY, botD,
+                topW, topY, topD, -botW, botY, botD, botW, botY, botD,
+                // East face
+                topW, topY, -topD, topW, topY, topD, botW, botY, botD,
+                topW, topY, -topD, botW, botY, botD, botW, botY, -botD,
+                // West face
+                -topW, topY, topD, -topW, topY, -topD, -botW, botY, -botD,
+                -topW, topY, topD, -botW, botY, -botD, -botW, botY, botD
+            ]);
+
+            pyramidGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            pyramidGeo.computeVertexNormals();
+
+            const pyramidMat = new THREE.MeshBasicMaterial({
+                color: lightColorHex,
+                transparent: true,
+                opacity: 0.22,
+                side: THREE.DoubleSide
+            });
+            const pyramidMesh = new THREE.Mesh(pyramidGeo, pyramidMat);
+            lightGroup.add(pyramidMesh);
+
+            // 4. Power Cable & Industrial Connector Plug Array
+            const cableGroup = new THREE.Group();
+            cableGroup.position.set(squareDist + 8, 8, squareDist + 8);
+
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(8, 8, 8),
+                new THREE.Vector3(16, 12, 16),
+                new THREE.Vector3(24, 15, 24)
+            ]);
+            const tubeGeo = new THREE.TubeGeometry(curve, 16, 2.5, 12, false);
+            const cableMat = new THREE.MeshStandardMaterial({ color: 0x11131a, roughness: 0.6 });
+            const tubeMesh = new THREE.Mesh(tubeGeo, cableMat);
+            cableGroup.add(tubeMesh);
+
+            const plugGeo = new THREE.BoxGeometry(10, 8, 14);
+            const plugMat = new THREE.MeshStandardMaterial({ color: 0x1c202b, roughness: 0.3, metalness: 0.5 });
+            const plugMesh = new THREE.Mesh(plugGeo, plugMat);
+            plugMesh.position.set(25, 16, 25);
+            plugMesh.rotation.y = Math.PI / 4;
+            cableGroup.add(plugMesh);
+
+            lightGroup.add(cableGroup);
+
+            // Omnidirectional 4-Side Spotlights Aiming at Target Workpiece
+            const squareLight = new THREE.PointLight(lightColorHex, 2.2, wd * 2.5);
+            squareLight.position.set(0, -10, 0);
+            lightGroup.add(squareLight);
+        }
+
+        components3DGroup.add(lightGroup);
+
+        activeLightGroup3D = lightGroup;
+        baseLightPosY = lightGroup.position.y;
+        if (transformControls3D) {
+            transformControls3D.attach(lightGroup);
+        }
+        resetLightSliders();
+
+        // ==================== 5. FOV OPTICAL CONE ====================
+        if (cfg.showFov !== false) {
+            const fovConeGroup = new THREE.Group();
+            const topLensY = wd;
+            const botY = 0;
+
+            // 4 Corner Lines forming Pyramid
+            const lineMat = new THREE.LineBasicMaterial({ color: lightColorHex, linewidth: 2, transparent: true, opacity: 0.8 });
+            const corners = [
+                [-fovW / 2, botY, -fovH / 2],
+                [fovW / 2, botY, -fovH / 2],
+                [fovW / 2, botY, fovH / 2],
+                [-fovW / 2, botY, fovH / 2]
+            ];
+
+            corners.forEach(c => {
+                const points = [];
+                points.push(new THREE.Vector3(0, topLensY, 0));
+                points.push(new THREE.Vector3(c[0], c[1], c[2]));
+                const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+                fovConeGroup.add(new THREE.Line(lineGeo, lineMat));
+            });
+
+            // Translucent Pyramid Volume
+            const pyShape = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+                0, topLensY, 0, -fovW / 2, botY, -fovH / 2, fovW / 2, botY, -fovH / 2,
+                0, topLensY, 0, fovW / 2, botY, -fovH / 2, fovW / 2, botY, fovH / 2,
+                0, topLensY, 0, fovW / 2, botY, fovH / 2, -fovW / 2, botY, fovH / 2,
+                0, topLensY, 0, -fovW / 2, botY, fovH / 2, -fovW / 2, botY, -fovH / 2
+            ]);
+            pyShape.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            pyShape.computeVertexNormals();
+
+            const pyMat = new THREE.MeshBasicMaterial({
+                color: lightColorHex,
+                transparent: true,
+                opacity: 0.12,
+                side: THREE.DoubleSide
+            });
+            const pyMesh = new THREE.Mesh(pyShape, pyMat);
+            fovConeGroup.add(pyMesh);
+
+            components3DGroup.add(fovConeGroup);
+            activeFovGroup3D = fovConeGroup;
+            activeFovGroup3D.userData.lastWorkpieceY = 0;  // workpiece starts at Y=0
+        }
+
+        // ==================== 6. TARGET WORKPIECE ====================
+        const workGroup = new THREE.Group();
+        workGroup.position.set(0, 0, 0);
+
+        // Ground stage base plane - Bright Silver Anodized Aluminum Plate
+        const stageGeo = new THREE.BoxGeometry(Math.max(200, fovW * 2), 6, Math.max(160, fovH * 2));
+        const stageMat = new THREE.MeshStandardMaterial({ color: 0xd4dfeb, roughness: 0.3, metalness: 0.8 });
+        const stageMesh = new THREE.Mesh(stageGeo, stageMat);
+        stageMesh.position.y = -4;
+        stageMesh.receiveShadow = true;
+        workGroup.add(stageMesh);
+
+        // FOV Boundary box outline on workpiece surface
+        const fovBoxGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-fovW / 2, 0.5, -fovH / 2),
+            new THREE.Vector3(fovW / 2, 0.5, -fovH / 2),
+            new THREE.Vector3(fovW / 2, 0.5, fovH / 2),
+            new THREE.Vector3(-fovW / 2, 0.5, fovH / 2),
+            new THREE.Vector3(-fovW / 2, 0.5, -fovH / 2)
+        ]);
+        const fovBoxMat = new THREE.LineBasicMaterial({ color: 0x00f2ff, linewidth: 2 });
+        const fovBoxLine = new THREE.Line(fovBoxGeo, fovBoxMat);
+        workGroup.add(fovBoxLine);
+
+        const wpType = cfg.workpiece || 'pcb';
+
+        if (wpType === 'pcb') {
+            // Green PCB Board
+            const pcbGeo = new THREE.BoxGeometry(fovW * 0.9, 3, fovH * 0.9);
+            const pcbMat = new THREE.MeshStandardMaterial({ color: 0x0a6033, roughness: 0.4 });
+            const pcbMesh = new THREE.Mesh(pcbGeo, pcbMat);
+            pcbMesh.position.y = 1.5;
+            workGroup.add(pcbMesh);
+
+            // IC Microchips
+            const chipGeo = new THREE.BoxGeometry(fovW * 0.25, 4, fovH * 0.25);
+            const chipMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.2 });
+            const chipMesh = new THREE.Mesh(chipGeo, chipMat);
+            chipMesh.position.set(0, 4, 0);
+            workGroup.add(chipMesh);
+
+        } else if (wpType === 'cnc') {
+            // Aluminium CNC Metal Block
+            const cncGeo = new THREE.BoxGeometry(fovW * 0.8, 15, fovH * 0.8);
+            const cncMat = new THREE.MeshStandardMaterial({ color: 0xc4cdd5, metalness: 0.9, roughness: 0.2 });
+            const cncMesh = new THREE.Mesh(cncGeo, cncMat);
+            cncMesh.position.y = 7.5;
+            workGroup.add(cncMesh);
+
+            // Drilled Hole
+            const holeGeo = new THREE.CylinderGeometry(fovW * 0.15, fovW * 0.15, 16, 32);
+            const holeMat = new THREE.MeshStandardMaterial({ color: 0x101520, roughness: 0.8 });
+            const holeMesh = new THREE.Mesh(holeGeo, holeMat);
+            holeMesh.position.set(0, 8, 0);
+            workGroup.add(holeMesh);
+
+        } else if (wpType === 'bottle') {
+            // Cylindrical Bottle Container
+            const bGeo = new THREE.CylinderGeometry(fovH * 0.35, fovH * 0.35, fovW * 0.8, 32);
+            const bMat = new THREE.MeshPhysicalMaterial({ color: 0x0088cc, transparent: true, opacity: 0.7, roughness: 0.1 });
+            const bMesh = new THREE.Mesh(bGeo, bMat);
+            bMesh.position.y = (fovW * 0.8) / 2;
+            workGroup.add(bMesh);
+
+        } else if (wpType === 'grid') {
+            // Calibration Grid Target
+            const gridGeo = new THREE.PlaneGeometry(fovW * 0.9, fovH * 0.9);
+            const gridMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+            const gridMesh = new THREE.Mesh(gridGeo, gridMat);
+            gridMesh.rotation.x = -Math.PI / 2;
+            gridMesh.position.y = 1;
+            workGroup.add(gridMesh);
+        }
+
+        components3DGroup.add(workGroup);
+        activeWorkGroup3D = workGroup;
+        baseWorkGroupPosY = workGroup.position.y;
+
+        select3DTransformTarget(activeWorkGroup3D, 'Workpiece / Product Specimen');
+
+        // ── Auto-fill dimension annotations from calculated config ──────────────────
+        // WD: always from the calculated working distance (lens bottom → product)
+        dimAnnotationWD = cfg.workingDistance || 150;
+
+        // LWD: from the real light bottom Y position.
+        // baseLightPosY = lightGroup.position.y (world). Light half-heights per type:
+        const lightType2 = cfg.lightType || 'ring';
+        let lightHalfH = 13; // default ring light half-height
+        if (lightType2 === 'ring') lightHalfH = 13;  // ringH=26
+        else if (lightType2 === 'ring-flat') lightHalfH = 8;
+        else if (lightType2 === 'coaxial') lightHalfH = 12;
+        else if (lightType2 === 'dome') lightHalfH = 30;
+        else if (lightType2 === 'backlight') lightHalfH = 5;
+        else if (lightType2 === 'bar') lightHalfH = 10;
+        else if (lightType2 === 'square-bar') lightHalfH = 10;
+        const lightBottomY = baseLightPosY - lightHalfH;
+        const initProdY = activeWorkGroup3D ? activeWorkGroup3D.position.y : 0;
+        dimAnnotationLWD = Math.max(initProdY + 0.5, lightBottomY);
+
+        // Reset line X offsets so they reinitialise from the new config's base offset
+        dimWDXOffset = 0;
+        dimLWDXOffset = 0;
+        drawDimensionAnnotations(cfg);
+    }
+
+    // Export 3D Snapshot as High-Resolution Square PNG Image (1:1 Aspect Ratio)
+    function export3DConceptImage() {
+        if (!renderer3D || !scene3D || !camera3D) return;
+
+        // Temporarily detach TransformControls gizmo so drag arrows are 100% hidden in output image
+        const attachedObj = transformControls3D ? transformControls3D.object : null;
+        if (transformControls3D && attachedObj) {
+            transformControls3D.detach();
+        }
+
+        // Save current camera aspect and renderer viewport size
+        const origAspect = camera3D.aspect;
+        const container = document.querySelector('.viewport-3d-wrapper');
+        const origW = container ? container.clientWidth : 800;
+        const origH = container ? container.clientHeight : 600;
+
+        // Force 1:1 Square Aspect Ratio Render (1200 × 1200 px)
+        const exportWidth = 1200;
+        const exportHeight = 1200;
+
+        camera3D.aspect = 1.0;
+        camera3D.updateProjectionMatrix();
+        renderer3D.setSize(exportWidth, exportHeight, false);
+        renderer3D.render(scene3D, camera3D);
+
+        const sourceCanvas = renderer3D.domElement;
+
+        // Composite Square Canvas (1200 × 1200 px)
+        const compCanvas = document.createElement('canvas');
+        compCanvas.width = exportWidth;
+        compCanvas.height = exportHeight;
+        const ctx = compCanvas.getContext('2d');
+
+        // Studio Slate Neutral Gradient Background
+        const grad = ctx.createLinearGradient(0, 0, 0, exportHeight);
+        grad.addColorStop(0, '#f8fafc');
+        grad.addColorStop(1, '#cbd5e1');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, exportWidth, exportHeight);
+
+        // Draw Square WebGL 3D Snapshot
+        ctx.drawImage(sourceCanvas, 0, 0, exportWidth, exportHeight);
+
+        // Header Title Banner (Dark Cyber Header)
+        ctx.fillStyle = 'rgba(9, 13, 22, 0.90)';
+        ctx.fillRect(0, 0, exportWidth, 90);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 90);
+        ctx.lineTo(exportWidth, 90);
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 24px "Orbitron", sans-serif';
+        ctx.fillText('VISION SYSTEM 3D CONCEPT SIMULATION', 30, 42);
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '14px "Inter", sans-serif';
+        const dateStr = new Date().toLocaleString('vi-VN');
+        ctx.fillText(`Exported Date: ${dateStr} | High Resolution Square Render (1:1)`, 30, 70);
+
+        // Bottom Specification Box (Dark Obsidian Overlay Card)
+        ctx.fillStyle = 'rgba(9, 13, 22, 0.90)';
+        ctx.fillRect(30, exportHeight - 140, exportWidth - 60, 110);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(30, exportHeight - 140, exportWidth - 60, 110);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px "Inter", sans-serif';
+        ctx.fillText(`Camera: ${current3DConfig.cameraName || 'MV-CH250'} (${current3DConfig.sensorSize || '2/3"'})`, 50, exportHeight - 105);
+        ctx.fillText(`Lens: ${current3DConfig.lensName || 'FA 12mm'} | Extension Ring: ${current3DConfig.extensionLength || 0} mm`, 50, exportHeight - 72);
+
+        const wdValExport = (typeof dimLabelWD !== 'undefined' && dimLabelWD) ? dimLabelWD : (current3DConfig.workingDistance || 150);
+        const lwdValExport = (typeof dimLabelLWD !== 'undefined' && dimLabelLWD) ? dimLabelLWD : (dimAnnotationLWD || 30);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 15px "Orbitron", sans-serif';
+        ctx.fillText(`WD: ${wdValExport.toFixed(1)} mm | LWD: ${lwdValExport.toFixed(1)} mm | FOV: ${(current3DConfig.fovWidth || 80).toFixed(1)} × ${(current3DConfig.fovHeight || 60).toFixed(1)} mm`, 500, exportHeight - 105);
+        ctx.fillText(`Accuracy: ${(current3DConfig.pixelSize || 0.025).toFixed(4)} mm/px`, 500, exportHeight - 72);
+
+        // ── Draw WD & LWD Dimension Annotations on Export Canvas ──────────────────────
+        function projectExport(wx, wy, wz) {
+            const v = new THREE.Vector3(wx, wy, wz);
+            v.project(camera3D);
+            return {
+                x: (v.x * 0.5 + 0.5) * exportWidth,
+                y: (-v.y * 0.5 + 0.5) * exportHeight,
+                behind: v.z > 1
+            };
+        }
+
+        const fovW = Math.max(10, current3DConfig.fovWidth || 80);
+        const baseXOffset = fovW / 2 + 55;
+        const exportWDX = (typeof dimWDXOffset !== 'undefined' && dimWDXOffset !== 0) ? dimWDXOffset : baseXOffset;
+        const exportLWDX = (typeof dimLWDXOffset !== 'undefined' && dimLWDXOffset !== 0) ? dimLWDXOffset : (baseXOffset + 28);
+        const exportWDTopY = (typeof dimAnnotWDTopY !== 'undefined' && dimAnnotWDTopY !== 0) ? dimAnnotWDTopY : wdValExport;
+        const exportWDBottomY = (typeof dimAnnotWDBottomY !== 'undefined') ? dimAnnotWDBottomY : 0;
+        const exportLWDTopY = (typeof dimAnnotLWDTopY !== 'undefined' && dimAnnotLWDTopY !== 0) ? dimAnnotLWDTopY : lwdValExport;
+        const exportLWDBottomY = (typeof dimAnnotLWDBottomY !== 'undefined') ? dimAnnotLWDBottomY : 0;
+
+        function drawDimAnnotExport(xOff, yTop, yBottom, colorHex, labelText) {
+            const pTop = projectExport(xOff, yTop, 0);
+            const pBottom = projectExport(xOff, yBottom, 0);
+            const pMid = projectExport(xOff, (yTop + yBottom) / 2, 0);
+            if (pTop.behind || pBottom.behind) return;
+
+            const hexStr = '#' + colorHex.toString(16).padStart(6, '0');
+            const dimStr = '#' + Math.floor(colorHex * 0.4).toString(16).padStart(6, '0');
+
+            // Vertical shaft
+            ctx.strokeStyle = hexStr;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(pTop.x, pTop.y);
+            ctx.lineTo(pBottom.x, pBottom.y);
+            ctx.stroke();
+
+            // Tick marks
+            const tickLen = 12;
+            ctx.beginPath();
+            ctx.moveTo(pTop.x - tickLen, pTop.y);
+            ctx.lineTo(pTop.x + tickLen, pTop.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pBottom.x - tickLen, pBottom.y);
+            ctx.lineTo(pBottom.x + tickLen, pBottom.y);
+            ctx.stroke();
+
+            // Horizontal guide lines to model center
+            ctx.strokeStyle = dimStr;
+            ctx.lineWidth = 1.5;
+            const pModelTop = projectExport(0, yTop, 0);
+            const pModelBottom = projectExport(0, yBottom, 0);
+            if (!pModelTop.behind) {
+                ctx.beginPath();
+                ctx.moveTo(pModelTop.x, pModelTop.y);
+                ctx.lineTo(pTop.x - 14, pTop.y);
+                ctx.stroke();
+            }
+            if (!pModelBottom.behind) {
+                ctx.beginPath();
+                ctx.moveTo(pModelBottom.x, pModelBottom.y);
+                ctx.lineTo(pBottom.x - 14, pBottom.y);
+                ctx.stroke();
+            }
+
+            // Label badge
+            const badgeText = labelText;
+            ctx.font = 'bold 15px "Orbitron", monospace';
+            const tw = ctx.measureText(badgeText).width;
+            const bx = pMid.x + 14;
+            const by = pMid.y - 15;
+            const bw = tw + 22;
+            const bh = 30;
+            const br = 6;
+
+            // Badge background & border
+            ctx.fillStyle = 'rgba(10, 14, 24, 0.94)';
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+                ctx.roundRect(bx, by, bw, bh, br);
+            } else {
+                ctx.rect(bx, by, bw, bh);
+            }
+            ctx.fill();
+
+            ctx.strokeStyle = hexStr;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+                ctx.roundRect(bx, by, bw, bh, br);
+            } else {
+                ctx.rect(bx, by, bw, bh);
+            }
+            ctx.stroke();
+
+            // Badge text
+            ctx.fillStyle = hexStr;
+            ctx.fillText(badgeText, bx + 11, by + 20);
+
+            // Circle indicator on top tick
+            ctx.beginPath();
+            ctx.arc(pTop.x, pTop.y, 8, 0, Math.PI * 2);
+            ctx.fillStyle = hexStr + '55';
+            ctx.fill();
+            ctx.strokeStyle = hexStr;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // WD annotation – orange (#f97316)
+        drawDimAnnotExport(
+            exportWDX, exportWDTopY, exportWDBottomY,
+            0xf97316, `WD = ${wdValExport.toFixed(0)} mm`
+        );
+        // LWD annotation – cyan (#22d3ee)
+        drawDimAnnotExport(
+            exportLWDX, exportLWDTopY, exportLWDBottomY,
+            0x22d3ee, `LWD = ${lwdValExport.toFixed(0)} mm`
+        );
+
+        // Restore original camera aspect ratio and renderer size
+        camera3D.aspect = origAspect;
+        camera3D.updateProjectionMatrix();
+        renderer3D.setSize(origW, origH, false);
+        renderer3D.render(scene3D, camera3D);
+
+        // Re-attach TransformControls gizmo after rendering snapshot
+        if (transformControls3D && attachedObj) {
+            transformControls3D.attach(attachedObj);
+        }
+
+        // Trigger PNG Download
+        const dataUrl = compCanvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const filename = `Vision_Concept_3D_Square_${(current3DConfig.cameraName || 'Setup').replace(/\s+/g, '_')}_${Date.now()}.png`;
+        link.download = filename;
+        link.href = dataUrl;
+        link.click();
+
+        // Show Downloaded Image Result Preview Modal with full WD & LWD labels
+        showDownloadedImageModal(dataUrl, filename, {
+            wd: wdValExport,
+            lwd: lwdValExport,
+            fovW: current3DConfig.fovWidth || 80,
+            fovH: current3DConfig.fovHeight || 60,
+            acc: current3DConfig.pixelSize || 0.025
+        });
+    }
+
+    // ── Helper to Display Downloaded Image Result Preview Modal ───────────────────
+    function showDownloadedImageModal(dataUrl, filename, specs) {
+        const modal = document.getElementById('modal-downloaded-image');
+        const img = document.getElementById('downloaded-image-preview');
+        const wdEl = document.getElementById('downloaded-img-wd');
+        const lwdEl = document.getElementById('downloaded-img-lwd');
+        const fovEl = document.getElementById('downloaded-img-fov');
+        const accEl = document.getElementById('downloaded-img-acc');
+        const reDownloadBtn = document.getElementById('downloaded-img-re-download');
+        const openTabBtn = document.getElementById('downloaded-img-open-tab');
+
+        if (img) img.src = dataUrl;
+        if (wdEl) wdEl.textContent = `${specs.wd.toFixed(0)} mm`;
+        if (lwdEl) lwdEl.textContent = `${specs.lwd.toFixed(0)} mm`;
+        if (fovEl) fovEl.textContent = `${specs.fovW.toFixed(1)} × ${specs.fovH.toFixed(1)} mm`;
+        if (accEl) accEl.textContent = `${specs.acc.toFixed(4)} mm/px`;
+
+        if (reDownloadBtn) {
+            reDownloadBtn.href = dataUrl;
+            reDownloadBtn.download = filename;
+        }
+
+        if (openTabBtn) {
+            openTabBtn.onclick = () => {
+                const win = window.open();
+                if (win) {
+                    win.document.write(`
+                        <html>
+                            <head><title>Downloaded Image Result - ${filename}</title></head>
+                            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+                                <img src="${dataUrl}" style="max-width:98vw; max-height:98vh; object-fit:contain; border-radius:8px; box-shadow: 0 0 30px rgba(0,0,0,0.8);" />
+                            </body>
+                        </html>
+                    `);
+                }
+            };
+        }
+
+        if (modal) {
+            modal.style.display = 'flex';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    }
+
+    // Modal Close Event Listeners for Downloaded Image Preview Modal
+    const closeDownloadedImgBtn = document.getElementById('close-downloaded-image-btn');
+    const closeDownloadedImgBtnFooter = document.getElementById('close-downloaded-image-btn-footer');
+    const modalDownloadedImg = document.getElementById('modal-downloaded-image');
+
+    if (closeDownloadedImgBtn) closeDownloadedImgBtn.addEventListener('click', () => {
+        if (modalDownloadedImg) modalDownloadedImg.style.display = 'none';
+    });
+    if (closeDownloadedImgBtnFooter) closeDownloadedImgBtnFooter.addEventListener('click', () => {
+        if (modalDownloadedImg) modalDownloadedImg.style.display = 'none';
+    });
+    if (modalDownloadedImg) {
+        modalDownloadedImg.addEventListener('click', (e) => {
+            if (e.target === modalDownloadedImg) modalDownloadedImg.style.display = 'none';
+        });
+    }
+
+    // Attach Modal Controls & Button Event Listeners
+    if (close3DBtn) close3DBtn.addEventListener('click', close3DConceptModal);
+    if (modal3D) {
+        modal3D.addEventListener('click', (e) => {
+            if (e.target === modal3D) close3DConceptModal();
+        });
+    }
+
+    if (export3DBtnTop) export3DBtnTop.addEventListener('click', export3DConceptImage);
+    if (export3DBtnBottom) export3DBtnBottom.addEventListener('click', export3DConceptImage);
+
+    // View Presets
+    const presetBtns = document.querySelectorAll('.preset-btn[data-view]');
+    presetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            presetBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const view = btn.getAttribute('data-view');
+            const wd = current3DConfig.workingDistance || 150;
+
+            if (view === 'isometric') {
+                camera3D.position.set(240, 220, 300);
+            } else if (view === 'front') {
+                camera3D.position.set(0, wd / 2, 380);
+            } else if (view === 'side') {
+                camera3D.position.set(380, wd / 2, 0);
+            } else if (view === 'top') {
+                camera3D.position.set(0, wd * 2.5, 0.1);
+            }
+            if (controls3D) controls3D.target.set(0, wd / 2, 0);
+        });
+    });
+
+    if (reset3DCamBtn) {
+        reset3DCamBtn.addEventListener('click', () => {
+            resetToInitialState();
+        });
+    }
+
+    // ── Full reset — restore the scene to the state it had when the modal was first opened ──────
+    function resetToInitialState() {
+        // 1. Restore config to the snapshot saved at open time (falls back to current if not saved)
+        const cfg = initialOpen3DConfig ? JSON.parse(JSON.stringify(initialOpen3DConfig)) : JSON.parse(JSON.stringify(current3DConfig));
+
+        // 2. Reset all dimension annotation overrides so they auto-recalculate from cfg
+        dimAnnotWDTopY = 0;
+        dimAnnotLWDTopY = 0;
+        dimAnnotWDBottomY = 0;
+        dimAnnotLWDBottomY = 0;
+        dimWDXOffset = 0;
+        dimLWDXOffset = 0;
+        window._resetDimTop = true;
+
+        // 3. Rebuild the full 3D scene from the initial config
+        windowToModalConfig(cfg);
+
+        // 4. Clear the _resetDimTop flag after the rebuild
+        window._resetDimTop = false;
+
+        // 5. Restore camera to the initial isometric position
+        const wd = cfg.workingDistance || 150;
+        if (camera3D) camera3D.position.set(240, 220, 300);
+        if (controls3D) controls3D.target.set(0, wd / 2, 0);
+
+        // 6. Restore dropdowns to initial values
+        const initLightType = cfg.lightType || 'ring';
+        const initLightColor = cfg.lightColor || 'white';
+        const initWorkpiece = cfg.workpiece || 'pcb';
+        const initIsTele = !!(cfg.isTelecentric || (cfg.lensName && /telecentric|tec-|tele/i.test(cfg.lensName)));
+
+        if (select3DLightType) select3DLightType.value = initLightType;
+        if (select3DLightColor) select3DLightColor.value = initLightColor;
+        if (select3DWorkpiece) select3DWorkpiece.value = initWorkpiece;
+
+        const selectLensType = document.getElementById('select-3d-lens-type');
+        if (selectLensType) selectLensType.value = initIsTele ? 'telecentric' : 'fa';
+
+        // 7. Restore checkboxes
+        showWdLwdAnnotation = true;
+        if (chk3DShowFov) chk3DShowFov.checked = true;
+        if (chk3DShowDims) { chk3DShowDims.checked = true; }
+
+        // 8. Restore scene brightness to default
+        update3DBrightness(65);
+        const slider3DBrightnessEl = document.getElementById('slider-3d-brightness');
+        if (slider3DBrightnessEl) slider3DBrightnessEl.value = 65;
+
+        // 9. Highlight the isometric preset button as active
+        const presetBtnsAll = document.querySelectorAll('.preset-btn[data-view]');
+        presetBtnsAll.forEach(b => b.classList.remove('active'));
+        const isoBtn = document.querySelector('.preset-btn[data-view="isometric"]');
+        if (isoBtn) isoBtn.classList.add('active');
+    }
+
+    // Customization Selectors
+    if (select3DLightType) {
+        select3DLightType.addEventListener('change', () => {
+            current3DConfig.lightType = select3DLightType.value;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+
+    if (select3DLightColor) {
+        select3DLightColor.addEventListener('change', () => {
+            current3DConfig.lightColor = select3DLightColor.value;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+
+    if (select3DWorkpiece) {
+        select3DWorkpiece.addEventListener('change', () => {
+            current3DConfig.workpiece = select3DWorkpiece.value;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+
+    const select3DLensType = document.getElementById('select-3d-lens-type');
+    if (select3DLensType) {
+        select3DLensType.addEventListener('change', () => {
+            const val = select3DLensType.value;
+            current3DConfig.isTelecentric = (val === 'telecentric');
+            if (val === 'telecentric') {
+                current3DConfig.lensName = current3DConfig.lensName && /telecentric|tec-/i.test(current3DConfig.lensName)
+                    ? current3DConfig.lensName
+                    : 'Industrial Telecentric Coaxial Lens (TEC-V Series)';
+            } else {
+                current3DConfig.lensName = current3DConfig.lensName && !/telecentric|tec-/i.test(current3DConfig.lensName)
+                    ? current3DConfig.lensName
+                    : 'Standard FA Lens (Fixed Focal)';
+            }
+            const elLens = document.getElementById('spec-3d-lens');
+            if (elLens) elLens.textContent = current3DConfig.lensName;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+
+    // WD & LWD Dimension Annotation Controls
+    const chkShowWdLwd = document.getElementById('chk-3d-show-wd-lwd');
+    if (chkShowWdLwd) {
+        chkShowWdLwd.addEventListener('change', () => {
+            showWdLwdAnnotation = chkShowWdLwd.checked;
+            const body = document.getElementById('dim-annotation-body');
+            if (body) body.style.display = showWdLwdAnnotation ? 'block' : 'none';
+            drawDimensionAnnotations(current3DConfig);
+        });
+    }
+
+    const btnApplyDim = document.getElementById('btn-apply-dim-annotation');
+    if (btnApplyDim) {
+        btnApplyDim.addEventListener('click', () => {
+            const inpWd = document.getElementById('inp-dim-wd');
+            const inpLwd = document.getElementById('inp-dim-lwd');
+            // Only update the LABEL text — dimension line endpoints do NOT move
+            if (inpWd) dimLabelWD = Math.max(0, parseFloat(inpWd.value) || dimLabelWD);
+            // LWD allows negative values for backlight mode (light below workpiece)
+            if (inpLwd) {
+                const parsed = parseFloat(inpLwd.value);
+                if (!isNaN(parsed)) dimLabelLWD = parsed;
+            }
+            updateDimLabelPositions();   // refresh label badges only, no 3D rebuild
+        });
+    }
+
+    const select3DBgTheme = document.getElementById('select-3d-bg-theme');
+    if (select3DBgTheme) {
+        select3DBgTheme.addEventListener('change', () => {
+            const theme = select3DBgTheme.value;
+            if (theme === 'clean-white') {
+                update3DBrightness(100);
+            } else if (theme === 'dark-cyber') {
+                update3DBrightness(25);
+            } else {
+                update3DBrightness(65);
+            }
+            const slider = document.getElementById('slider-3d-brightness');
+            if (slider) slider.value = (theme === 'clean-white' ? 100 : (theme === 'dark-cyber' ? 25 : 65));
+        });
+    }
+
+    const slider3DBrightness = document.getElementById('slider-3d-brightness');
+    if (slider3DBrightness) {
+        slider3DBrightness.addEventListener('input', (e) => {
+            update3DBrightness(e.target.value);
+        });
+    }
+
+    function update3DBrightness(percent) {
+        const val = parseFloat(percent) / 100;
+        let r, g, b;
+        if (val < 0.5) {
+            const t = val * 2;
+            r = Math.round(26 + (80 - 26) * t);
+            g = Math.round(34 + (96 - 34) * t);
+            b = Math.round(48 + (116 - 48) * t);
+        } else {
+            const t = (val - 0.5) * 2;
+            r = Math.round(80 + (255 - 80) * t);
+            g = Math.round(96 + (255 - 96) * t);
+            b = Math.round(116 + (255 - 116) * t);
+        }
+
+        const hexColor = (r << 16) | (g << 8) | b;
+        if (scene3D) scene3D.background = new THREE.Color(hexColor);
+        if (renderer3D) renderer3D.setClearColor(hexColor, 1);
+
+        if (scene3D) {
+            scene3D.traverse((child) => {
+                if (child.isAmbientLight) {
+                    child.intensity = 0.8 + val * 0.8;
+                }
+            });
+        }
+
+        const lbl = document.getElementById('lbl-3d-brightness-val');
+        if (lbl) lbl.textContent = Math.round(percent) + '%';
+    }
+
+    if (chk3DShowFov) {
+        chk3DShowFov.addEventListener('change', () => {
+            current3DConfig.showFov = chk3DShowFov.checked;
+            // Use lightweight cone rebuild instead of full scene rebuild
+            const curY = activeWorkGroup3D ? activeWorkGroup3D.position.y : 0;
+            if (chk3DShowFov.checked) {
+                rebuildFovCone(current3DConfig, curY);
+            } else {
+                if (activeFovGroup3D && components3DGroup) {
+                    components3DGroup.remove(activeFovGroup3D);
+                    activeFovGroup3D = null;
+                }
+            }
+        });
+    }
+
+    if (chk3DShowDims) {
+        chk3DShowDims.addEventListener('change', () => {
+            current3DConfig.showDims = chk3DShowDims.checked;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+
+    // FA Lens Calculator Button trigger
+    const showFa3DBtn = document.getElementById('show-fa-3d-btn');
+    if (showFa3DBtn) {
+        showFa3DBtn.addEventListener('click', () => {
+            const camType = document.getElementById('calc-camera-type')?.value || 'Industrial Camera';
+            const sensorSize = document.getElementById('calc-sensor-size')?.value || '2/3"';
+            const lensType = document.getElementById('calc-lens-type')?.value || 'FA Lens';
+            const flStr = document.getElementById('calc-focal-length')?.value || '12mm';
+            const fovW = parseFloat(document.getElementById('calc-fov-width')?.value) || 80;
+            const fovH = parseFloat(document.getElementById('calc-fov-height')?.value) || (fovW * 0.75);
+            const wd = parseFloat(document.getElementById('calc-working-distance')?.value) || 150;
+            const pxSize = parseFloat(document.getElementById('calc-pixel-size')?.value) || 0.025;
+            const extLen = document.getElementById('use-adapter-ring')?.checked ? (parseFloat(document.getElementById('calc-ring-length')?.value) || 5) : 0;
+
+            open3DConceptModal({
+                cameraName: camType,
+                sensorSize: sensorSize,
+                lensName: lensType,
+                focalLength: flStr,
+                extensionLength: extLen,
+                workingDistance: wd,
+                fovWidth: fovW,
+                fovHeight: fovH,
+                pixelSize: pxSize
+            });
+        });
+    }
+
+    // Telecentric Lens Calculator Button trigger
+    const showTele3DBtn = document.getElementById('show-tele-3d-btn');
+    if (showTele3DBtn) {
+        showTele3DBtn.addEventListener('click', () => {
+            const camType = document.getElementById('tele-calc-camera-type')?.value || 'Telecentric Camera';
+            const sensorSize = document.getElementById('tele-calc-sensor-size')?.value || '2/3"';
+            const lensType = document.getElementById('tele-calc-lens-type')?.value || 'Telecentric Lens';
+            const mag = document.getElementById('tele-calc-magnification')?.value || '1.0x';
+            const fovW = parseFloat(document.getElementById('tele-calc-fov-width')?.value) || 60;
+            const fovH = parseFloat(document.getElementById('tele-calc-fov-height')?.value) || (fovW * 0.75);
+            const wdStr = document.getElementById('tele-calc-wd-range')?.value || '110mm';
+            const wd = parseFloat(wdStr.replace(/[^\d.]/g, '')) || 110;
+            const pxSize = parseFloat(document.getElementById('tele-calc-pixel-size')?.value) || 0.015;
+
+            open3DConceptModal({
+                cameraName: camType,
+                sensorSize: sensorSize,
+                lensName: lensType,
+                focalLength: 'β=' + mag,
+                extensionLength: 0,
+                workingDistance: wd,
+                fovWidth: fovW,
+                fovHeight: fovH,
+                pixelSize: pxSize,
+                isTelecentric: true
+            });
+        });
+    }
+
+    // EXT Calculate Button trigger
+    const showExt3DBtn = document.getElementById('show-ext-3d-btn');
+    if (showExt3DBtn) {
+        showExt3DBtn.addEventListener('click', () => {
+            const brand = document.getElementById('ext-brand-select')?.value || 'Computar';
+            const lensModel = document.getElementById('ext-lens-select')?.value || 'FA Lens';
+            const wdStr = document.getElementById('ext-wd-select')?.value || '100';
+            const wd = parseFloat(wdStr) || 100;
+            const extResultStr = document.getElementById('ext-result-display')?.textContent || '5';
+            const extLen = parseFloat(extResultStr) || 5;
+
+            open3DConceptModal({
+                cameraName: brand.toUpperCase() + ' System Camera',
+                sensorSize: '2/3" Standard',
+                lensName: lensModel,
+                focalLength: '12mm',
+                extensionLength: extLen,
+                workingDistance: wd,
+                fovWidth: 80,
+                fovHeight: 60,
+                pixelSize: 0.025
+            });
+        });
     }
 
     // Call init

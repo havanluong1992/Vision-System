@@ -12,15 +12,62 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 </head>
 
 <body>
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="login-modal">
+        <div class="login-card glass-panel">
+            <div class="login-header">
+                <i data-lucide="lock"></i>
+                <h2>System Security Login</h2>
+                <p>Authorized personnel only</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>User ID</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user"></i>
+                        <input type="text" id="login-id" value="Admin" placeholder="Enter User ID" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="key"></i>
+                        <input type="password" id="login-pass" placeholder="Enter Password" required>
+                    </div>
+                </div>
+                <div id="login-error" class="login-error-msg"></div>
+                <button type="submit" class="login-submit-btn">
+                    <span>Log In</span>
+                    <i data-lucide="log-in"></i>
+                </button>
+            </form>
+            <button class="modal-close" id="close-login-btn">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo-container">
-                <div class="logo-icon">
-                    <i data-lucide="eye"></i>
+                <div class="logo-icon" style="background: transparent; box-shadow: none; padding: 0;">
+                    <svg width="38" height="38" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Blue Circle -->
+                        <circle cx="20" cy="20" r="17.5" fill="#70b4e0"/>
+                        <!-- Vertical Center Line -->
+                        <line x1="20" y1="2.5" x2="20" y2="37.5" stroke="#377aa8" stroke-width="2.6"/>
+                        <!-- Upper Horizontal Line (Extended beyond circle edges) -->
+                        <line x1="2" y1="13" x2="38" y2="13" stroke="#377aa8" stroke-width="2.6"/>
+                        <!-- Lower Horizontal Line (Extended beyond circle edges) -->
+                        <line x1="2" y1="27" x2="38" y2="27" stroke="#377aa8" stroke-width="2.6"/>
+                    </svg>
                 </div>
                 <span class="logo-text">VISION<span>SYSTEM</span></span>
             </div>
@@ -34,15 +81,15 @@
                     <i data-lucide="aperture"></i>
                     <span>Lens Products</span>
                 </a>
-                <a href="#" class="nav-item" data-tab="analytics" id="nav-calc">
+                <a href="#" class="nav-item protected-nav" data-tab="analytics" id="nav-calc">
                     <i data-lucide="calculator"></i>
                     <span>Calculation Vision</span>
                 </a>
-                <a href="#" class="nav-item" data-tab="ext-calc">
+                <a href="#" class="nav-item protected-nav" data-tab="ext-calc">
                     <i data-lucide="layers"></i>
                     <span>EXT Calculate</span>
                 </a>
-                <a href="#" class="nav-item" data-tab="vision-lab">
+                <a href="#" class="nav-item protected-nav" data-tab="vision-lab">
                     <i data-lucide="wrench"></i>
                     <span>Vision Lab</span>
                 </a>
@@ -103,21 +150,18 @@
                     <i data-lucide="search"></i>
                     <input type="text" id="search-input" placeholder="Search cameras...">
                 </div>
-                <div class="user-profile">
-                    <div class="user-info" id="user-login-trigger" style="cursor: pointer;">
-                        <span class="user-name" id="display-user-name">Login</span>
-                        <span class="user-role" id="display-user-role">Click to sign in</span>
-                    </div>
-                    <!-- Mobile Login Button (Padlock icon) -->
-                    <button id="mobile-login-btn" class="action-btn mobile-login-only" style="width: 36px; height: 36px; border-radius: 8px; display: none; align-items: center; justify-content: center; margin-right: 0.5rem; background: rgba(0, 242, 255, 0.1); border-color: rgba(0, 242, 255, 0.2); color: var(--accent);" title="Login">
-                        <i data-lucide="lock"></i>
+                <div class="user-profile" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <!-- Language Toggle Button (EN / VI) -->
+                    <button id="lang-toggle-btn" class="action-btn" title="Switch Language (English / Tiếng Việt)"
+                        style="height: 38px; padding: 0 10px; border-radius: 9px; display: flex; align-items: center; justify-content: center; gap: 5px; font-family: 'Orbitron', monospace; font-size: 0.78rem; font-weight: 700; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); color: #38bdf8; cursor: pointer; transition: all 0.2s ease;">
+                        <i data-lucide="globe" style="width: 15px; height: 15px;"></i>
+                        <span id="lang-btn-text">EN</span>
                     </button>
-                    <div class="avatar" id="user-avatar-trigger" style="cursor: pointer;">
-                        <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=VisionAI&backgroundColor=0d1117&eyes=eva&mouth=smile01"
-                            alt="AI Avatar">
-                    </div>
-                    <button id="logout-btn" class="logout-btn" style="display: none;" title="Logout">
-                        <i data-lucide="log-out"></i>
+
+                    <!-- Single Lock Authentication Button -->
+                    <button id="user-login-trigger" class="lock-auth-btn" title="Click to Log In"
+                        style="width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); color: #f97316; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 0 10px rgba(249, 115, 22, 0.15);">
+                        <i id="lock-auth-icon" data-lucide="lock-keyhole-open" style="width: 18px; height: 18px;"></i>
                     </button>
                 </div>
             </header>
@@ -130,8 +174,8 @@
                     <div class="page-header"
                         style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
-                            <h1><i data-lucide="aperture"></i> Lens Products</h1>
-                            <p>Fixed Aperture and Telecentric Lens catalog</p>
+                            <h1><i data-lucide="aperture"></i> Lens Catalog</h1>
+                            <p>Fixed Aperture (FA) and Telecentric Industrial Lens catalog</p>
                         </div>
                         <div class="admin-controls" style="display: none; gap: 0.5rem;">
                             <button class="action-btn" id="add-lens-btn" title="Add Lens"
@@ -148,8 +192,8 @@
 
                     <!-- Inner Tabs for Lens Categories -->
                     <div class="inner-tabs">
-                        <button class="inner-tab-btn active" data-lens-category="fa">Lens FA</button>
-                        <button class="inner-tab-btn" data-lens-category="tele">Lens Tele</button>
+                        <button class="inner-tab-btn active" data-lens-category="fa">FA Lenses</button>
+                        <button class="inner-tab-btn" data-lens-category="tele">Telecentric Lenses</button>
                     </div>
 
                     <!-- Lens FA Content -->
@@ -158,10 +202,10 @@
                             <table class="data-table" id="lens-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 50px;">No.</th>
+                                        <th style="width: 50px;">STT</th>
                                         <th>Product Model</th>
                                         <th>Focal Length</th>
-                                        <th>Image Size</th>
+                                        <th>Max Sensor Format</th>
                                     </tr>
                                 </thead>
                                 <tbody id="lens-tbody">
@@ -170,7 +214,7 @@
                             </table>
                         </div>
                         <div class="table-footer">
-                            <span class="table-info">Showing <strong id="lens-showing-count">0</strong> of <strong
+                            <span class="table-info">Showing <strong id="lens-showing-count">0</strong> / <strong
                                     id="lens-total-count">0</strong> lenses</span>
                         </div>
                     </div>
@@ -181,10 +225,10 @@
                             <table class="data-table" id="tele-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 50px;">No.</th>
-                                        <th>Model Name</th>
+                                        <th style="width: 50px;">STT</th>
+                                        <th>Product Model</th>
                                         <th>Sensor Size</th>
-                                        <th>Working Distance</th>
+                                        <th>Working Distance (WD)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tele-tbody">
@@ -204,8 +248,8 @@
                     <div class="page-header"
                         style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
-                            <h1><i data-lucide="camera"></i> Camera Products</h1>
-                            <p>Manage and view all camera models in the system</p>
+                            <h1><i data-lucide="camera"></i> Camera Catalog</h1>
+                            <p>Comprehensive catalog of industrial vision cameras</p>
                         </div>
                         <div class="admin-controls" style="display: none; gap: 0.5rem;">
                             <button class="action-btn" id="add-camera-btn" title="Add Camera"
@@ -222,7 +266,7 @@
 
                     <!-- Tab Control for Camera Categories -->
                     <div class="inner-tabs">
-                        <button class="inner-tab-btn active" data-category="hik">HIK</button>
+                        <button class="inner-tab-btn active" data-category="hik">HIKROBOT</button>
                         <button class="inner-tab-btn" data-category="basler">Basler</button>
                         <button class="inner-tab-btn" data-category="cognex">Cognex</button>
                     </div>
@@ -232,8 +276,8 @@
                         <table class="data-table" id="camera-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 50px;">No.</th>
-                                    <th>Product Model</th>
+                                    <th style="width: 50px;">STT</th>
+                                    <th>Camera Model</th>
                                     <th>Resolution</th>
                                     <th>Sensor Size</th>
                                     <th>W × H (mm)</th>
@@ -259,8 +303,8 @@
                 <!-- Calculation Vision Tab -->
                 <section id="tab-analytics" class="tab-panel">
                     <div class="page-header">
-                        <h1><i data-lucide="calculator"></i> Calculation Vision</h1>
-                        <p>Calculate Field of View (FOV) based on lens and camera parameters</p>
+                        <h1><i data-lucide="calculator"></i> Vision Calculator</h1>
+                        <p>Calculate Field of View (FOV) and accuracy based on lens and camera specifications</p>
                     </div>
 
                     <!-- FA Lens Calculator -->
@@ -272,9 +316,9 @@
                         <div class="calc-grid">
                             <!-- Camera Selection -->
                             <div class="calc-section">
-                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <h3><i data-lucide="camera"></i> Camera Specifications</h3>
                                 <div class="calc-row">
-                                    <label for="calc-camera-type">Camera Type</label>
+                                    <label for="calc-camera-type">Camera Model</label>
                                     <div class="search-select-container">
                                         <input type="text" id="calc-camera-type" class="calc-input search-select-input"
                                             placeholder="-- Search Camera --" autocomplete="off">
@@ -282,17 +326,17 @@
                                     </div>
                                 </div>
                                 <div class="calc-row">
-                                    <label for="calc-sensor-size">Sensor Size (W×H)</label>
+                                    <label for="calc-sensor-size">Sensor Dimensions (W × H)</label>
                                     <input type="text" id="calc-sensor-size" class="calc-input" readonly
-                                        placeholder="Auto from camera">
+                                        placeholder="Auto-filled from camera">
                                 </div>
                             </div>
 
                             <!-- Lens Selection -->
                             <div class="calc-section">
-                                <h3><i data-lucide="aperture"></i> Lens Parameters</h3>
+                                <h3><i data-lucide="aperture"></i> Lens Specifications</h3>
                                 <div class="calc-row">
-                                    <label for="calc-lens-type">Lens Type</label>
+                                    <label for="calc-lens-type">Lens Model</label>
                                     <div class="search-select-container">
                                         <input type="text" id="calc-lens-type" class="calc-input search-select-input"
                                             placeholder="-- Search Lens --" autocomplete="off">
@@ -302,12 +346,12 @@
                                 <div class="calc-row">
                                     <label for="calc-focal-length">Focal Length</label>
                                     <input type="text" id="calc-focal-length" class="calc-input" readonly
-                                        placeholder="Auto from lens">
+                                        placeholder="Auto-filled from lens">
                                 </div>
                                 <div class="calc-row">
-                                    <label for="calc-image-size">Image Size</label>
+                                    <label for="calc-image-size">Max Image Circle</label>
                                     <input type="text" id="calc-image-size" class="calc-input" readonly
-                                        placeholder="Auto from lens">
+                                        placeholder="Auto-filled from lens">
                                 </div>
                                 <div class="calc-row-flex">
                                     <div class="checkbox-group">
@@ -358,6 +402,10 @@
                                         <i data-lucide="arrow-left"></i> FOV → WD
                                     </button>
                                 </div>
+                                <button id="show-fa-3d-btn" class="calc-btn calc-btn-3d"
+                                    style="width: 100%; margin-top: 0.75rem; background: linear-gradient(135deg, #00f2ff, #7000ff); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <i data-lucide="box"></i> View & Export 3D Concept Simulation
+                                </button>
                             </div>
                         </div>
 
@@ -390,7 +438,7 @@
                         <div class="calc-grid">
                             <!-- Camera Selection -->
                             <div class="calc-section">
-                                <h3><i data-lucide="camera"></i> Camera Parameters</h3>
+                                <h3><i data-lucide="camera"></i> Camera Specifications</h3>
                                 <div class="calc-row">
                                     <label for="tele-calc-camera-type">Camera Type</label>
                                     <div class="search-select-container">
@@ -403,7 +451,7 @@
                                 <div class="calc-row">
                                     <label for="tele-calc-sensor-size">Sensor Size (W×H)</label>
                                     <input type="text" id="tele-calc-sensor-size" class="calc-input" readonly
-                                        placeholder="Auto from camera">
+                                        placeholder="Auto-filled from camera">
                                 </div>
                             </div>
 
@@ -427,7 +475,7 @@
                                 <div class="calc-row">
                                     <label for="tele-calc-wd-range">Working Distance</label>
                                     <input type="text" id="tele-calc-wd-range" class="calc-input" readonly
-                                        placeholder="Auto from lens">
+                                        placeholder="Auto-filled from lens">
                                 </div>
                             </div>
 
@@ -466,6 +514,10 @@
                                 <button id="tele-calc-fov-btn" class="calc-btn"
                                     style="background: linear-gradient(135deg, var(--purple), var(--blue));">
                                     <i data-lucide="calculator"></i> Calculate
+                                </button>
+                                <button id="show-tele-3d-btn" class="calc-btn calc-btn-3d"
+                                    style="width: 100%; margin-top: 0.75rem; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <i data-lucide="box"></i> View & Export 3D Concept Simulation
                                 </button>
                             </div>
                         </div>
@@ -568,7 +620,7 @@
                                         <input type="range" id="light-intensity" min="0" max="200" value="100">
                                     </div>
                                     <div class="slider-row">
-                                        <label>Contrast / Sharpness</label>
+                                        <label>Contrast & Sharpness</label>
                                         <input type="range" id="light-contrast" min="0" max="200" value="100">
                                     </div>
                                     <div class="slider-row" id="threshold-container" style="display: none;">
@@ -656,7 +708,7 @@
                         </div>
                     </div>
                 </section>
-                
+
                 <!-- EXT Calculate Tab -->
                 <section id="tab-ext-calc" class="tab-panel">
                     <div class="page-header">
@@ -665,16 +717,17 @@
                     </div>
 
                     <div class="calculator-container glass-panel">
-                        <h2 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--accent);">
+                        <h2
+                            style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem; color: var(--accent);">
                             <i data-lucide="layers"></i> EXT Calculate Selector
                         </h2>
-                        
+
                         <div class="calc-grid">
                             <!-- Parameters Selection -->
                             <div class="calc-section">
                                 <h3><i data-lucide="sliders"></i> Parameters</h3>
                                 <div class="calc-row">
-                                    <label for="ext-brand-select">Lens Brand / Chart</label>
+                                    <label for="ext-brand-select">Lens Brand / Manufacturer</label>
                                     <select id="ext-brand-select" class="calc-input">
                                         <option value="computar">Computar Lens Chart</option>
                                         <option value="hik-5mp">HIK Lens Chart (5MP)</option>
@@ -682,7 +735,7 @@
                                     </select>
                                 </div>
                                 <div class="calc-row">
-                                    <label for="ext-lens-select">Lens Model / Focal Length</label>
+                                    <label for="ext-lens-select">Lens Model</label>
                                     <select id="ext-lens-select" class="calc-input">
                                         <!-- Dynamic options -->
                                     </select>
@@ -694,44 +747,69 @@
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <!-- Result Display -->
-                            <div class="calc-section calc-results" style="display: flex; flex-direction: column; justify-content: center; border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+                            <div class="calc-section calc-results"
+                                style="display: flex; flex-direction: column; justify-content: center; border-left: 1px solid var(--glass-border); padding-left: 2rem;">
                                 <h3><i data-lucide="info"></i> Calculation Result</h3>
-                                <div class="ext-result-wrapper" style="width: 100%; text-align: center; padding: 2rem 1rem; border-radius: 12px; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.15); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); margin-top: 1rem;">
-                                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Extension Tube Size</span>
-                                    <span id="ext-result-display" style="font-family: 'Orbitron', monospace; font-size: 2.75rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 15px var(--accent-glow); display: block; margin: 0.5rem 0;">--</span>
-                                    <span id="ext-result-note" style="font-size: 0.85rem; color: var(--text-secondary); display: block; min-height: 3em; line-height: 1.4;">Select parameters to calculate</span>
+                                <div class="ext-result-wrapper"
+                                    style="width: 100%; text-align: center; padding: 2rem 1rem; border-radius: 12px; background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.15); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); margin-top: 1rem;">
+                                    <span
+                                        style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); display: block; margin-bottom: 0.5rem;">Extension
+                                        Tube Size</span>
+                                    <span id="ext-result-display"
+                                        style="font-family: 'Orbitron', monospace; font-size: 2.75rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 15px var(--accent-glow); display: block; margin: 0.5rem 0;">--</span>
+                                    <span id="ext-result-note"
+                                        style="font-size: 0.85rem; color: var(--text-secondary); display: block; min-height: 3em; line-height: 1.4;">Select
+                                        parameters to calculate</span>
                                 </div>
-                                <button id="ext-edit-btn" class="calc-btn" style="display: none; margin-top: 1rem; width: 100%; background: var(--green); color: white; border-color: var(--green);">
+                                <button id="show-ext-3d-btn" class="calc-btn calc-btn-3d"
+                                    style="margin-top: 1rem; width: 100%; background: linear-gradient(135deg, #00f2ff, #3b82f6); color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <i data-lucide="box"></i> View & Export 3D Extension Simulation
+                                </button>
+                                <button id="ext-edit-btn" class="calc-btn"
+                                    style="display: none; margin-top: 1rem; width: 100%; background: var(--green); color: white; border-color: var(--green);">
                                     <i data-lucide="edit-2"></i> Edit Value (Admin)
                                 </button>
                             </div>
-                            
+
                             <!-- Reference/Quick Instructions -->
-                            <div class="calc-section" style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+                            <div class="calc-section"
+                                style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
                                 <h3><i data-lucide="help-circle"></i> Understanding Charts</h3>
-                                <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-top: 1rem;">
-                                    <div><strong style="color: var(--text-primary);">Extension tube sizes:</strong> Numbers like 0.5, 5, 10, 15 represent tube thickness in mm.</div>
-                                    <div><strong style="color: var(--text-primary);">Combined rings (HIK):</strong> Combinations like 1;2 or 5;6;7 specify multiple rings combined.</div>
-                                    <div><strong style="color: var(--text-primary);">Exceptions:</strong> "not have ext" indicates no extension tube options exist, and "EXT problem" indicates compatibility issues.</div>
-                                    <div><strong style="color: var(--text-primary);">Grey Cells:</strong> Indicates unsupported working distance (WD) for that specific lens.</div>
+                                <div
+                                    style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); margin-top: 1rem;">
+                                    <div><strong style="color: var(--text-primary);">Extension tube sizes:</strong>
+                                        Numbers like 0.5, 5, 10, 15 represent tube thickness in mm.</div>
+                                    <div><strong style="color: var(--text-primary);">Combined rings (HIK):</strong>
+                                        Combinations like 1;2 or 5;6;7 specify multiple rings combined.</div>
+                                    <div><strong style="color: var(--text-primary);">Exceptions:</strong> "not have ext"
+                                        indicates no extension tube options exist, and "EXT problem" indicates
+                                        compatibility issues.</div>
+                                    <div><strong style="color: var(--text-primary);">Grey Cells:</strong> Indicates
+                                        unsupported working distance (WD) for that specific lens.</div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Interactive Chart Preview -->
-                        <div class="ext-chart-section" style="margin-top: 2.5rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
-                            <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; color: var(--accent);">
+                        <div class="ext-chart-section"
+                            style="margin-top: 2.5rem; border-top: 1px solid var(--glass-border); padding-top: 2rem;">
+                            <h3
+                                style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; color: var(--accent);">
                                 <i data-lucide="grid"></i> Interactive Chart Preview
                             </h3>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <div
+                                style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
                                 <i data-lucide="info" style="width: 14px; height: 14px; color: var(--accent);"></i>
-                                <span>Tip: Click directly on any cell inside the chart below to auto-select and calculate!</span>
+                                <span>Tip: Click directly on any cell inside the chart below to auto-select and
+                                    calculate!</span>
                             </div>
-                            
-                            <div class="ext-table-container" style="overflow-x: auto; width: 100%; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(0,0,0,0.15); max-height: 500px;">
-                                <table class="data-table ext-table" id="ext-interactive-table" style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
+
+                            <div class="ext-table-container"
+                                style="overflow-x: auto; width: 100%; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(0,0,0,0.15); max-height: 500px;">
+                                <table class="data-table ext-table" id="ext-interactive-table"
+                                    style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
                                     <thead id="ext-interactive-thead">
                                         <!-- Injected dynamically -->
                                     </thead>
@@ -759,38 +837,385 @@
         </main>
     </div>
 
-    <!-- Login Modal -->
-    <div class="modal-overlay" id="login-modal">
-        <div class="login-card glass-panel">
-            <div class="login-header">
-                <i data-lucide="lock"></i>
-                <h2>Security Login</h2>
-                <p>Authorized personnel only</p>
+
+    <!-- 3D Concept Simulation Modal -->
+    <div class="modal-overlay" id="modal-3d-concept">
+        <div class="modal-3d-card glass-panel">
+            <div class="modal-3d-header">
+                <div class="modal-3d-title">
+                    <div class="modal-3d-icon">
+                        <i data-lucide="box"></i>
+                    </div>
+                    <div>
+                        <h2>3D CONCEPT SIMULATION</h2>
+                        <p id="modal-3d-subtitle">Interactive 3D Rig: Camera + Lens + Extension Ring + Light + FOV Cone</p>
+                    </div>
+                </div>
+                <div class="modal-3d-header-actions">
+                    <button id="export-3d-btn-top" class="calc-btn"
+                        style="background: linear-gradient(135deg, #00f2ff, #7000ff); color: white; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem;">
+                        <i data-lucide="download"></i> <span>Export 3D Image (PNG)</span>
+                    </button>
+                    <button class="modal-close" id="close-3d-modal-btn" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
             </div>
-            <form id="login-form">
-                <div class="form-group">
-                    <label>User ID</label>
-                    <div class="input-with-icon">
-                        <i data-lucide="user"></i>
-                        <input type="text" id="login-id" value="Admin" placeholder="Enter ID" required>
+
+            <div class="modal-3d-body">
+                <!-- 3D Viewport Area -->
+                <div class="viewport-3d-wrapper">
+                    <canvas id="canvas-3d"></canvas>
+
+                    <!-- View Preset Buttons -->
+                    <div class="viewport-3d-toolbar">
+                        <button class="preset-btn active" data-view="isometric"><i data-lucide="box"></i> <span>3D Isometric</span></button>
+                        <button class="preset-btn" data-view="front"><i data-lucide="eye"></i> <span>Front View</span></button>
+                        <button class="preset-btn" data-view="side"><i data-lucide="move-horizontal"></i> <span>Side View</span></button>
+                        <button class="preset-btn" data-view="top"><i data-lucide="arrow-down-circle"></i> <span>Top View</span></button>
+                        <button class="preset-btn" id="reset-3d-cam-btn" title="Reset Camera View"><i
+                                data-lucide="refresh-cw"></i> Reset</button>
+                    </div>
+
+                    <!-- Dynamic HUD Badge -->
+                    <div class="viewport-3d-hud" id="hud-3d-info">
+                        <div class="hud-item"><span class="hud-label">WD:</span> <strong id="hud-wd-val">150 mm</strong>
+                        </div>
+                        <div class="hud-item"><span class="hud-label">FOV:</span> <strong id="hud-fov-val">80 × 60
+                                mm</strong></div>
+                        <div class="hud-item"><span class="hud-label">EXT:</span> <strong id="hud-ext-val">5.0
+                                mm</strong></div>
+                        <div class="hud-item"
+                            style="border-top: 1px dashed rgba(2, 132, 199, 0.3); padding-top: 4px; margin-top: 2px;">
+                            <span class="hud-label">Selected:</span> <strong id="hud-selected-target" style="font-size: 0.725rem; color: #0284c7;">Lighting Assembly</strong>
+                        </div>
+                    </div>
+
+                    <!-- Watermark Info in Viewport -->
+                    <div class="viewport-3d-watermark">
+                        <span><i data-lucide="eye" style="width: 12px; height: 12px; display: inline-block;"></i> VISION
+                            SYSTEM 3D SIMULATOR</span>
+                    </div>
+
+                    <!-- WD & LWD Dimension Label Overlay -->
+                    <div id="dim-label-overlay"
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 8; display: block;">
+                        <!-- Labels injected by JS -->
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <div class="input-with-icon">
-                        <i data-lucide="key"></i>
-                        <input type="password" id="login-pass" placeholder="Enter Password" required>
+
+                <!-- Sidebar Specs & Controls -->
+                <div class="sidebar-3d-panel">
+                    <!-- Setup Specs Summary -->
+                    <div class="card-3d-section">
+                        <h3><i data-lucide="cpu"></i> <span>Configuration Specifications</span></h3>
+                        <div class="specs-grid-3d">
+                            <div class="spec-item"><span>Camera:</span> <strong
+                                    id="spec-3d-cam">HIKMV-CA050-10GM</strong></div>
+                            <div class="spec-item"><span>Sensor:</span> <strong id="spec-3d-sensor">2/3" (8.8 × 6.6
+                                    mm)</strong></div>
+                            <div class="spec-item"><span>Lens:</span> <strong id="spec-3d-lens">FA 12mm
+                                    F1.4</strong></div>
+                            <div class="spec-item"><span>Ext Ring:</span> <strong id="spec-3d-ext">5.0 mm</strong>
+                            </div>
+                            <div class="spec-item"><span>Working Dist:</span> <strong id="spec-3d-wd">150
+                                    mm</strong></div>
+                            <div class="spec-item"><span>Field of View:</span> <strong id="spec-3d-fov">80 × 60
+                                    mm</strong></div>
+                            <div class="spec-item"><span>Accuracy:</span> <strong id="spec-3d-acc">0.025
+                                    mm/px</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- 3D Controls -->
+                    <div class="card-3d-section">
+                        <h3><i data-lucide="sliders"></i> <span>Lighting & Workpiece Controls</span></h3>
+
+                        <div class="control-row-3d">
+                            <label><i data-lucide="focus"></i> <span>Lens Series</span></label>
+                            <select id="select-3d-lens-type" class="calc-input">
+                                <option value="fa">Standard FA Lens</option>
+                                <option value="telecentric">Telecentric Lens</option>
+                            </select>
+                        </div>
+
+                        <div class="control-row-3d">
+                            <label><i data-lucide="sun"></i> <span>Light Source Type</span></label>
+                            <select id="select-3d-light-type" class="calc-input">
+                                <option value="ring">Ring Light (Angle Ring)</option>
+                                <option value="ring-flat">Ring Flat Light</option>
+                                <option value="coaxial">Coaxial Light</option>
+                                <option value="dome">Dome Light (Diffuse Dome)</option>
+                                <option value="backlight">Backlight</option>
+                                <option value="bar">Bar Light (Dual Side)</option>
+                                <option value="square-bar">Square Bar Light (BA4)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-row-3d">
+                            <label><i data-lucide="palette"></i> <span>Wavelength & Color</span></label>
+                            <select id="select-3d-light-color" class="calc-input">
+                                <option value="white">White LED (6500K)</option>
+                                <option value="yellow">Yellow LED (590nm)</option>
+                                <option value="red">Red LED (630nm)</option>
+                                <option value="blue">Blue LED (470nm)</option>
+                                <option value="green">Green LED (525nm)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-row-3d">
+                            <label><i data-lucide="box"></i> <span>Workpiece Specimen</span></label>
+                            <select id="select-3d-workpiece" class="calc-input">
+                                <option value="pcb">PCB Board</option>
+                                <option value="cnc">CNC Metal Block</option>
+                                <option value="bottle">Bottle Container</option>
+                                <option value="grid">Calibration Grid</option>
+                            </select>
+                        </div>
+
+                        <div class="control-row-3d">
+                            <label><i data-lucide="image"></i> <span>3D Environment Theme</span></label>
+                            <select id="select-3d-bg-theme" class="calc-input">
+                                <option value="studio-bright">Neutral Studio</option>
+                                <option value="clean-white">Clean White</option>
+                                <option value="dark-cyber">Dark Cyber</option>
+                            </select>
+                        </div>
+
+                        <div class="control-row-3d">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                                <label style="margin-bottom: 0;"><i data-lucide="sun-medium"></i> <span>Studio Illumination</span></label>
+                                <strong id="lbl-3d-brightness-val"
+                                    style="color: #0284c7; font-family: 'Orbitron', monospace; font-size: 0.8rem;">65%</strong>
+                            </div>
+                            <input type="range" id="slider-3d-brightness" min="15" max="100" value="65" step="1"
+                                style="width: 100%; accent-color: #0284c7; cursor: pointer;">
+                        </div>
+
+                        <div class="control-row-3d-checkboxes">
+                            <label class="checkbox-label-3d">
+                                <input type="checkbox" id="chk-3d-show-fov" checked>
+                                <span>Optical Ray Cone & FOV Plane</span>
+                            </label>
+                            <label class="checkbox-label-3d">
+                                <input type="checkbox" id="chk-3d-show-dims" checked>
+                                <span>Bounding Rulers (WD, FOV, Ext)</span>
+                            </label>
+                            <label class="checkbox-label-3d">
+                                <input type="checkbox" id="chk-3d-show-gizmo" checked>
+                                <span>3D Navigation Gizmo (RGB)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- WD & LWD Dimension Annotation -->
+                    <div class="card-3d-section" id="dim-annotation-card">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <h3 style="margin: 0;"><i data-lucide="ruler"></i> <span>WD & LWD Measurement Annotations</span></h3>
+                            <label class="checkbox-label-3d" style="margin: 0; flex-shrink: 0;">
+                                <input type="checkbox" id="chk-3d-show-wd-lwd" checked>
+                                <span style="font-size: 0.72rem;">Show</span>
+                            </label>
+                        </div>
+                        <div id="dim-annotation-body">
+                            <div
+                                style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.65rem; line-height: 1.5;">
+                                <span style="color: #f97316; font-weight: 600;">B – Working Distance (WD):</span> <span>Lens face to workpiece</span><br>
+                                <span style="color: #22d3ee; font-weight: 600;">A – Light Working Distance (LWD):</span> <span>Light face to workpiece</span>
+                            </div>
+                            <div class="calc-row" style="margin-bottom: 0.55rem;">
+                                <label
+                                    style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.2rem; display: block;">B – Working Distance (WD - mm)</label>
+                                <div style="display: flex; gap: 0.4rem; align-items: center;">
+                                    <input type="number" id="inp-dim-wd" class="calc-input"
+                                        style="flex: 1; padding: 0.3rem 0.5rem; font-size: 0.8rem; border-color: #f97316; color: #f97316;"
+                                        value="150" min="10" max="1000" step="5">
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">mm</span>
+                                </div>
+                            </div>
+                            <div class="calc-row" style="margin-bottom: 0.55rem;">
+                                <label
+                                    style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.2rem; display: block;">A – Light WD (LWD - mm)</label>
+                                <div style="display: flex; gap: 0.4rem; align-items: center;">
+                                    <input type="number" id="inp-dim-lwd" class="calc-input"
+                                        style="flex: 1; padding: 0.3rem 0.5rem; font-size: 0.8rem; border-color: #22d3ee; color: #22d3ee;"
+                                        value="30" min="-500" max="500" step="5">
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">mm</span>
+                                </div>
+                            </div>
+                            <button id="btn-apply-dim-annotation" class="calc-btn"
+                                style="width: 100%; background: linear-gradient(135deg, #f97316, #22d3ee); font-size: 0.78rem; padding: 0.4rem;">
+                                <i data-lucide="ruler"></i> <span>Update Measurement Labels</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Interactive 3D Transform Controls -->
+                    <div class="card-3d-section">
+                        <h3><i data-lucide="move"></i> <span>3D Target Transform & Gizmo</span></h3>
+
+                        <!-- Transform Target Selector -->
+                        <div class="control-row-3d" style="margin-bottom: 0.75rem;">
+                            <label><i data-lucide="target"></i> <span>Transform Target</span></label>
+                            <select id="select-3d-target-obj" class="calc-input">
+                                <option value="workpiece">Workpiece / Product Specimen</option>
+                                <option value="light">Lighting Assembly</option>
+                                <option value="camera">Camera & Lens Assembly</option>
+                            </select>
+                        </div>
+
+                        <!-- Mode Gizmo Buttons -->
+                        <div class="transform-mode-buttons" style="display: flex; gap: 0.35rem; margin-bottom: 1rem;">
+                            <button id="btn-transform-translate" class="preset-btn active"
+                                style="flex: 1; padding: 8px 0; font-size: 0.9rem; justify-content: center;"
+                                title="Translate (Di chuyển)"><i data-lucide="move"></i></button>
+                            <button id="btn-transform-rotate" class="preset-btn"
+                                style="flex: 1; padding: 8px 0; font-size: 0.9rem; justify-content: center;"
+                                title="Rotate (Xoay)"><i data-lucide="rotate-cw"></i></button>
+                            <button id="btn-transform-scale" class="preset-btn"
+                                style="flex: 1; padding: 8px 0; font-size: 0.9rem; justify-content: center;"
+                                title="Scale / Size (Tỉ lệ)"><i data-lucide="maximize-2"></i></button>
+                            <button id="btn-toggle-gizmo" class="preset-btn"
+                                style="flex: 1; padding: 8px 0; font-size: 0.9rem; justify-content: center; background: #0284c7; color: white;"
+                                title="Toggle RGB Navigation Gizmo"><i data-lucide="eye-off"></i></button>
+                        </div>
+
+                        <div class="slider-row-3d" style="margin-bottom: 0.65rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.775rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                                <span>Target Scale (Size):</span>
+                                <strong id="lbl-light-scale"
+                                    style="color: var(--accent); font-family: 'Orbitron', monospace;">100%</strong>
+                            </div>
+                            <input type="range" id="slider-light-scale" min="40" max="250" value="100" step="5"
+                                style="width: 100%; accent-color: var(--accent); cursor: pointer;">
+                        </div>
+
+                        <div class="slider-row-3d" style="margin-bottom: 0.65rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.775rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                                <span>Vertical Offset (Y):</span>
+                                <strong id="lbl-light-y"
+                                    style="color: var(--accent); font-family: 'Orbitron', monospace;">0 mm</strong>
+                            </div>
+                            <input type="range" id="slider-light-y" min="-80" max="150" value="0" step="2"
+                                style="width: 100%; accent-color: var(--accent); cursor: pointer;">
+                        </div>
+
+                        <div class="slider-row-3d" style="margin-bottom: 0.65rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.775rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                                <span>Horizontal Offset (X):</span>
+                                <strong id="lbl-light-x"
+                                    style="color: var(--accent); font-family: 'Orbitron', monospace;">0 mm</strong>
+                            </div>
+                            <input type="range" id="slider-light-x" min="-120" max="120" value="0" step="2"
+                                style="width: 100%; accent-color: var(--accent); cursor: pointer;">
+                        </div>
+
+                        <div class="slider-row-3d" style="margin-bottom: 0.65rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.775rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                                <span>Depth Offset (Z):</span>
+                                <strong id="lbl-light-z"
+                                    style="color: var(--accent); font-family: 'Orbitron', monospace;">0 mm</strong>
+                            </div>
+                            <input type="range" id="slider-light-z" min="-120" max="120" value="0" step="2"
+                                style="width: 100%; accent-color: var(--accent); cursor: pointer;">
+                        </div>
+
+                        <div class="slider-row-3d">
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.775rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                                <span>Y-Axis Rotation:</span>
+                                <strong id="lbl-light-rot"
+                                    style="color: var(--accent); font-family: 'Orbitron', monospace;">0°</strong>
+                            </div>
+                            <input type="range" id="slider-light-rot" min="-180" max="180" value="0" step="5"
+                                style="width: 100%; accent-color: var(--accent); cursor: pointer;">
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Downloaded Image Preview Modal -->
+    <div id="modal-downloaded-image" class="modal-3d-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-3d-card" style="max-width: 960px; height: auto; max-height: 90vh;">
+            <div class="modal-3d-header"
+                style="background: linear-gradient(135deg, #090d16, #1e293b); border-bottom: 1px solid #334155; color: white;">
+                <div class="modal-3d-title">
+                    <div class="modal-3d-icon"
+                        style="background: rgba(0, 242, 255, 0.15); border-color: #00f2ff; color: #00f2ff;">
+                        <i data-lucide="image"></i>
+                    </div>
+                    <div>
+                        <h2 style="color: #ffffff; font-size: 1.15rem;">DOWNLOADED CONCEPT IMAGE PREVIEW</h2>
+                        <p style="color: #94a3b8; font-size: 0.8rem; margin: 0;">Displays exported 3D concept image with full WD & LWD annotations</p>
                     </div>
                 </div>
-                <div id="login-error" class="login-error-msg"></div>
-                <button type="submit" class="login-submit-btn">
-                    <span>Sign In</span>
-                    <i data-lucide="log-in"></i>
+                <button class="modal-close" id="close-downloaded-image-btn" title="Close" style="color: #94a3b8;">
+                    <i data-lucide="x"></i>
                 </button>
-            </form>
-            <button class="modal-close" id="close-login-btn">
-                <i data-lucide="x"></i>
-            </button>
+            </div>
+
+            <div class="modal-3d-body"
+                style="flex-direction: column; padding: 1.25rem; gap: 1rem; overflow-y: auto; background: #0f172a;">
+                <!-- Main Image Display Container -->
+                <div class="downloaded-image-display-wrapper"
+                    style="position: relative; width: 100%; display: flex; justify-content: center; align-items: center; background: #090d16; border-radius: 12px; padding: 1rem; border: 1px solid #1e293b; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
+                    <img id="downloaded-image-preview" src="" alt="Vision System Concept"
+                        style="max-width: 100%; max-height: 55vh; object-fit: contain; border-radius: 8px; border: 1px solid #334155;">
+                </div>
+
+                <!-- WD & LWD Specs Highlight Badge Bar -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; width: 100%;">
+                    <div
+                        style="background: rgba(249, 115, 22, 0.12); border: 1px solid #f97316; border-radius: 8px; padding: 0.6rem 0.8rem; text-align: center;">
+                        <span style="font-size: 0.72rem; color: #fdba74; display: block; margin-bottom: 2px;">B – Working Distance (WD)</span>
+                        <strong id="downloaded-img-wd"
+                            style="font-size: 1rem; color: #f97316; font-family: 'Orbitron', monospace;">150 mm</strong>
+                    </div>
+                    <div
+                        style="background: rgba(34, 211, 238, 0.12); border: 1px solid #22d3ee; border-radius: 8px; padding: 0.6rem 0.8rem; text-align: center;">
+                        <span style="font-size: 0.72rem; color: #a5f3fc; display: block; margin-bottom: 2px;">A – Light Working Distance (LWD)</span>
+                        <strong id="downloaded-img-lwd"
+                            style="font-size: 1rem; color: #22d3ee; font-family: 'Orbitron', monospace;">30 mm</strong>
+                    </div>
+                    <div
+                        style="background: rgba(14, 165, 233, 0.12); border: 1px solid #0ea5e9; border-radius: 8px; padding: 0.6rem 0.8rem; text-align: center;">
+                        <span style="font-size: 0.72rem; color: #7dd3fc; display: block; margin-bottom: 2px;">Field of View (FOV)</span>
+                        <strong id="downloaded-img-fov"
+                            style="font-size: 0.95rem; color: #38bdf8; font-family: 'Orbitron', monospace;">80 × 60 mm</strong>
+                    </div>
+                    <div
+                        style="background: rgba(168, 85, 247, 0.12); border: 1px solid #a855f7; border-radius: 8px; padding: 0.6rem 0.8rem; text-align: center;">
+                        <span style="font-size: 0.72rem; color: #e9d5ff; display: block; margin-bottom: 2px;">Accuracy</span>
+                        <strong id="downloaded-img-acc"
+                            style="font-size: 0.95rem; color: #c084fc; font-family: 'Orbitron', monospace;">0.0250 mm/px</strong>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; width: 100%; margin-top: 0.25rem;">
+                    <a id="downloaded-img-re-download" href="#" download class="calc-btn"
+                        style="background: linear-gradient(135deg, #f97316, #22d3ee); color: white; display: flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.5rem 1.25rem; font-size: 0.85rem;">
+                        <i data-lucide="download"></i> <span>Re-download (PNG)</span>
+                    </a>
+                    <button id="downloaded-img-open-tab" class="calc-btn calc-btn-alt"
+                        style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.25rem; font-size: 0.85rem;">
+                        <i data-lucide="external-link"></i> <span>Open in New Tab</span>
+                    </button>
+                    <button id="close-downloaded-image-btn-footer" class="preset-btn"
+                        style="padding: 0.5rem 1.25rem; font-size: 0.85rem; background: #334155; color: white;">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 

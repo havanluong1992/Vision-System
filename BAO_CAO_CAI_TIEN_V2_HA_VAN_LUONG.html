@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo Cải tiến V2 — Hà Văn Lượng (#1)</title>
+    <!-- Google Fonts for Vietnamese & Korean -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 14mm 15mm 14mm 15mm;
+            @bottom-right {
+                content: counter(page) " / " counter(pages);
+                font-family: 'Inter', sans-serif;
+                font-size: 8pt;
+                color: #94a3b8;
+            }
+        }
+
+        :root {
+            --primary: #0f2744;
+            --primary-light: #1e3a8a;
+            --accent: #0284c7;
+            --accent-light: #e0f2fe;
+            --success: #059669;
+            --success-light: #ecfdf5;
+            --warning: #d97706;
+            --warning-light: #fffbeb;
+            --danger: #dc2626;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --bg-card: #f8fafc;
+            --bg-korean: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans KR', 'Segoe UI', sans-serif;
+            color: var(--text-main);
+            background: #ffffff;
+            line-height: 1.55;
+            font-size: 9.5pt;
+        }
+
+        .document-wrapper {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* HEADER BANNER */
+        .header-banner {
+            background: linear-gradient(135deg, #0a192f 0%, #1e3a8a 50%, #0284c7 100%);
+            color: #ffffff;
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+        }
+
+        .badge-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .contest-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .field-badge {
+            background: #0284c7;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 8pt;
+            font-weight: 600;
+        }
+
+        .header-title {
+            font-size: 16pt;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+
+        .header-subtitle {
+            font-size: 10.5pt;
+            font-weight: 500;
+            color: #e0f2fe;
+            margin-bottom: 12px;
+        }
+
+        .author-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 8.5pt;
+            color: #cbd5e1;
+        }
+
+        .author-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .author-meta strong {
+            color: #ffffff;
+        }
+
+        /* SECTION CARDS */
+        .section-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+        }
+
+        .section-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 8.5pt;
+            font-weight: 700;
+            border-radius: 6px;
+            margin-right: 8px;
+        }
+
+        .section-title {
+            font-size: 11pt;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title .kr-label {
+            font-family: 'Noto Sans KR', sans-serif;
+            color: var(--text-muted);
+            font-size: 9pt;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        /* BILINGUAL BLOCKS */
+        .content-block {
+            margin-bottom: 8px;
+        }
+
+        .content-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .lang-group {
+            margin-bottom: 8px;
+        }
+
+        .lang-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .lang-label {
+            display: inline-block;
+            font-size: 7.5pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+
+        .lang-label.vi {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .lang-label.kr {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .text-vi {
+            color: var(--text-main);
+            font-size: 9.5pt;
+            margin-bottom: 4px;
+        }
+
+        .text-kr {
+            font-family: 'Noto Sans KR', sans-serif;
+            color: #334155;
+            background: var(--bg-korean);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 8.5pt;
+            border-left: 3px solid #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            position: relative;
+            padding-left: 16px;
+            margin-bottom: 4px;
+        }
+
+        li::before {
+            content: "•";
+            position: absolute;
+            left: 4px;
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        li.kr-item::before {
+            color: #64748b;
+        }
+
+        /* GRID MODULES */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .module-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .module-box.full-width {
+            grid-column: span 2;
+        }
+
+        .module-box h4 {
+            font-size: 8.8pt;
+            font-weight: 700;
+            color: var(--primary-light);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .module-box p, .module-box li {
+            font-size: 8.2pt;
+            color: #334155;
+        }
+
+        /* KPI TABLE */
+        .kpi-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+            font-size: 8.5pt;
+        }
+
+        .kpi-table th, .kpi-table td {
+            padding: 7px 10px;
+            border: 1px solid #cbd5e1;
+            text-align: left;
+        }
+
+        .kpi-table th {
+            background: #0f2744;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .kpi-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .kpi-table td strong {
+            color: #0f172a;
+        }
+
+        .metric-badge-good {
+            display: inline-block;
+            background: #dcfce7;
+            color: #15803d;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 7.5pt;
+        }
+
+        .metric-badge-bad {
+            display: inline-block;
+            background: #fee2e2;
+            color: #b91c1c;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 7.5pt;
+        }
+
+        .highlight-text {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* FOOTER SUMMARY */
+        .footer-summary {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 14px;
+            page-break-inside: avoid;
+        }
+
+        .footer-summary h4 {
+            color: #166534;
+            font-size: 9.5pt;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .footer-summary p {
+            color: #14532d;
+            font-size: 8.5pt;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+
+<div class="document-wrapper">
+
+    <!-- HEADER BANNER -->
+    <div class="header-banner">
+        <div class="badge-row">
+            <span class="contest-badge">🏆 BÀI THI CẢI TIẾN V2 (VÒNG 1)</span>
+            <span class="field-badge">PM Part Leader PM • D · Hiện trường</span>
+        </div>
+        <h1 class="header-title">HỆ THỐNG TRỢ LÝ SỐ THIẾT KẾ QUANG HỌC, TÍNH TOÁN EXT TUBE & MÔ PHỎNG CONCEPT 3D VISION</h1>
+        <div class="header-subtitle">AI & 3D 시뮬레이션 기반 머신비전 광학 설계·EXT 튜브 계산 및 컨셉 검증 디지털 어시스턴트</div>
+        <div class="author-meta">
+            <span>👤 Thí sinh: <strong>Hà Văn Lượng (#1)</strong></span>
+            <span>🏢 Bộ phận: <strong>PM / Hiện trường (Field Operation)</strong></span>
+            <span>💻 Giải pháp: <strong>Vision System Calculator & 3D Simulator (All-in-One Web App)</strong></span>
+        </div>
+    </div>
+
+    <!-- MỤC 1: TIÊU ĐỀ -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">1</span>
+                <span>Tiêu đề Dự án</span>
+                <span class="kr-label">/ 제목</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <div class="lang-group">
+                <span class="lang-label vi">Tiếng Việt</span>
+                <div class="text-vi"><strong>Hệ thống Trợ lý số Thiết kế Quang học, Tính toán EXT Tube & Mô phỏng Concept 3D Trực quan hóa Hệ thống Vision Công nghiệp</strong></div>
+            </div>
+            <div class="lang-group">
+                <span class="lang-label kr">Tiếng Hàn / 한국어</span>
+                <div class="text-kr"><strong>AI 및 3D 시뮬레이션 기반 머신비전 광학 설계·EXT 튜브 계산 및 컨셉 검증 디지털 어시스턴트 시스템</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MỤC 2: VẤN ĐỀ -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">2</span>
+                <span>Vấn đề Hiện tại (Pain Points)</span>
+                <span class="kr-label">/ 문제 (현재 업무)</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <div class="lang-group">
+                <span class="lang-label vi">Tiếng Việt</span>
+                <ul>
+                    <li><strong>Lãng phí thời gian tra cứu thủ công:</strong> Kỹ sư phải lật tìm hàng trăm datasheet từ các hãng (HIKrobot, Basler, Cognex, Computar) và tính toán thủ công trên Excel, mất từ <strong class="metric-badge-bad">4 – 8 giờ/cấu hình</strong>.</li>
+                    <li><strong>Rủi ro sai sót quang học & phụ kiện:</strong> Ghép sai độ phân giải (Camera MP cao đi với Lens MP thấp), cảm biến lớn hơn vùng khả dụng của Lens gây tối góc (Vignetting), hoặc <strong>quên tính vòng nối EXT Tube</strong> khi khoảng cách làm việc (WD) gần. Tỷ lệ sai lệch chiếm <strong class="metric-badge-bad">12% – 15%</strong> dự án khi lắp đặt thực tế.</li>
+                    <li><strong>Không hình dung được không gian 3D & va chạm cơ khí:</strong> Bản vẽ 2D không cho thấy được độ cao trạm Vision, góc chiếu đèn (Backlight phía sau/dưới phôi, Ring light phía trên) và vùng nón sáng (FOV Cone) tương ứng với độ cao phôi thực tế.</li>
+                    <li><strong>Chi phí và thời gian thử nghiệm sơ bộ:</strong> Mất từ <strong>3 – 7 ngày</strong> thử nghiệm thủ công trong phòng Lab vật lý để kiểm tra hướng chiếu sáng và bộ lọc tách màu ảnh.</li>
+                </ul>
+            </div>
+            <div class="lang-group" style="margin-top: 6px;">
+                <span class="lang-label kr">Tiếng Hàn / 한국어</span>
+                <div class="text-kr">
+                    <ul>
+                        <li class="kr-item"><strong>시간 낭비:</strong> 제조사 수백 개 Datasheet 수작업 대조 및 엑셀 계산으로 건당 <strong>4~8시간 소요</strong>.</li>
+                        <li class="kr-item"><strong>광학 및 EXT Tube 누락 오차:</strong> 렌즈-카메라 오조합 및 근접 촬영 시 EXT Tube 미계산으로 인한 초점 불량률 <strong>12%~15%</strong> 발생.</li>
+                        <li class="kr-item"><strong>3D 기구 간섭 사전 검증 불가:</strong> 2D 수치만으로는 카메라 높이, 조명 각도(Backlight/Ring), FOV 콘과 워크피스 간 간섭 확인 곤란.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MỤC 3: MỤC TIÊU -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">3</span>
+                <span>Mục tiêu Cải tiến</span>
+                <span class="kr-label">/ 목표 (개선)</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <div class="lang-group">
+                <span class="lang-label vi">Tiếng Việt</span>
+                <ul>
+                    <li><strong>Tự động hóa đề xuất cấu hình tối ưu:</strong> Nhập 3 thông số (FOV, WD, Accuracy), hệ thống tự động đưa ra Top 2 cấu hình Camera & Lens tối ưu trong <strong class="metric-badge-good">&lt; 5 giây</strong>.</li>
+                    <li><strong>Tự động tính & Giả lập 3D vòng nối EXT Tube:</strong> Tính chính xác độ dày vòng đệm (0.5mm – 40mm) và hiển thị lắp ghép 3D trực tiếp giữa Camera và Lens.</li>
+                    <li><strong>Mô phỏng Concept 3D tương tác thời gian thực:</strong> Trực quan hóa trạm Vision 3D 360°, nón FOV tự động co giãn bám theo độ cao nâng/hạ của phôi, hỗ trợ đèn Backlight khoảng cách LWD âm (nằm phía sau phôi).</li>
+                    <li><strong>Hiệu quả tổng thể:</strong> Giảm <strong class="metric-badge-good">98.6%</strong> thời gian thiết kế, triệt tiêu <strong class="metric-badge-good">100%</strong> lỗi đặt nhầm thiết bị, tiết kiệm 100% chi phí Lab sơ bộ.</li>
+                </ul>
+            </div>
+            <div class="lang-group" style="margin-top: 6px;">
+                <span class="lang-label kr">Tiếng Hàn / 한국어</span>
+                <div class="text-kr">
+                    <ul>
+                        <li class="kr-item"><strong>광학 설계 자동화:</strong> 3개 변수 입력 시 <strong>5초 이내</strong> 최적 하드웨어 자동 추천.</li>
+                        <li class="kr-item"><strong>EXT 튜브 3D 시뮬레이션:</strong> 필요 튜브 두께(0.5~40mm) 자동 계산 및 3D 동적 체결 렌더링.</li>
+                        <li class="kr-item"><strong>3D 인터랙티브 검증:</strong> 360° 회전 뷰, 워크피스 연동 동적 FOV 콘, 백라이트 음수 LWD 지원.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- MỤC 4: GIẢI PHÁP -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">4</span>
+                <span>Giải pháp Thực hiện (Công nghệ & Module)</span>
+                <span class="kr-label">/ 솔루션 (도구/AI)</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <p style="margin-bottom: 8px; font-size: 9pt;">Xây dựng ứng dụng Web hiện đại (HTML5, Modern CSS, Three.js 3D WebGL, Canvas Processing Engine) với 5 phân hệ cốt lõi:</p>
+            <div class="modules-grid">
+                <div class="module-box">
+                    <h4>⚙️ 1. Smart Hardware Recommendation</h4>
+                    <p>Thuật toán tự động tính tiêu cự, kích thước cảm biến và phân cấp Megapixel tương thích. Đề xuất Top 2 cấu hình tốt nhất kèm điểm Match Score (%).</p>
+                </div>
+                <div class="module-box">
+                    <h4>🔄 2. EXT Tube 3D Stacking</h4>
+                    <p>Tự động tính độ dày Extension Tube khi WD ngắn hoặc cần độ phóng đại lớn; mô phỏng lắp chồng 3D trực quan các vòng (0.5mm – 40mm) giữa Camera và Lens.</p>
+                </div>
+                <div class="module-box">
+                    <h4>🌐 3. Interactive 3D Vision Simulator</h4>
+                    <p>Mô phỏng 3D trạm Vision: Camera, Lens, EXT Tube, Đèn (Backlight LWD âm/dương, Ring, Bar), phôi nâng/hạ với nón FOV co giãn thời gian thực và nút Reset 1-click.</p>
+                </div>
+                <div class="module-box">
+                    <h4>🔬 4. Virtual Vision Lab Simulator</h4>
+                    <p>Tải ảnh mẫu và giả lập tức thì các hiệu ứng ánh sáng (Darkfield, Backlight, Coaxial, Dome) và bộ lọc tách màu Monochrome (RGB, HSI).</p>
+                </div>
+                <div class="module-box full-width">
+                    <h4>🔒 5. Thư viện 100+ Thiết bị & Quản trị Bảo mật (Admin & Security)</h4>
+                    <p>Tích hợp sẵn hơn 100+ model camera/lens (HIKrobot, Basler, Cognex, Computar). Phân quyền Admin thêm/sửa/xóa, Export/Import JSON 1-click và bảo mật phiên (Session Login).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MỤC 5: PHẠM VI ÁP DỤNG -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">5</span>
+                <span>Phạm vi Áp dụng</span>
+                <span class="kr-label">/ 적용 범위</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <ul>
+                <li><strong>Bộ phận PM & Sales Engineer:</strong> Trình diễn Concept 3D trực quan, chốt cấu hình tối ưu với khách hàng ngay trong cuộc họp đầu tiên.</li>
+                <li><strong>Đội ngũ Kỹ sư Vision:</strong> Tính toán quang học, tính EXT Tube và chọn thiết bị chính xác 100%.</li>
+                <li><strong>Bộ phận Thiết kế Cơ khí (Mechanical Design):</strong> Kiểm tra không gian gá đặt, chiều cao camera, góc chiếu đèn trước khi gia công cơ khí.</li>
+                <li><strong>Đội ngũ Căn chỉnh Hiện trường (Field Setup):</strong> Dùng làm tài liệu chuẩn về khoảng cách WD, LWD đèn và độ dày EXT Tube khi lắp ráp thực tế.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- MỤC 6: BẢNG BEFORE / AFTER -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">6</span>
+                <span>Chỉ số Đo lường Hiệu quả (Before / After Metrics)</span>
+                <span class="kr-label">/ Before / After 지표</span>
+            </div>
+        </div>
+        <table class="kpi-table">
+            <thead>
+                <tr>
+                    <th style="width: 28%;">Chỉ số Đo lường</th>
+                    <th style="width: 25%;">Trước cải tiến (Before)</th>
+                    <th style="width: 22%;">Sau cải tiến (After)</th>
+                    <th style="width: 25%;">Hiệu quả Đạt được</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Thời gian tính toán & tra cứu</strong><br><span style="font-size:7.5pt; color:#64748b;">광학 계산 및 자재 검색</span></td>
+                    <td>240 – 480 phút / dự án<br><span style="font-size:7.5pt; color:#64748b;">Tra datasheet, tính Excel</span></td>
+                    <td><strong>&lt; 1 phút / dự án</strong><br><span style="font-size:7.5pt; color:#059669;">Tự động đề xuất tức thì</span></td>
+                    <td><span class="metric-badge-good">Nhanh gấp 300 lần</span><br>Giảm <strong>99.6%</strong> thời gian</td>
+                </tr>
+                <tr>
+                    <td><strong>Tính & chọn EXT Tube</strong><br><span style="font-size:7.5pt; color:#64748b;">EXT 튜브 계산 및 선정</span></td>
+                    <td>30 – 60 phút<br><span style="font-size:7.5pt; color:#64748b;">Tính thủ công, dễ nhầm cỡ</span></td>
+                    <td><strong>3 giây</strong><br><span style="font-size:7.5pt; color:#059669;">Tự tính & dựng 3D lắp ghép</span></td>
+                    <td><span class="metric-badge-good">Nhanh gấp 600 lần</span><br>Chính xác tuyệt đối</td>
+                </tr>
+                <tr>
+                    <td><strong>Kiểm tra Concept 3D không gian</strong><br><span style="font-size:7.5pt; color:#64748b;">3D 공간 간섭 및 컨셉 검증</span></td>
+                    <td>1 – 2 ngày<br><span style="font-size:7.5pt; color:#64748b;">Đợi dựng 3D CAD cơ khí</span></td>
+                    <td><strong>10 giây</strong><br><span style="font-size:7.5pt; color:#059669;">Xoay 360°, nâng hạ phôi</span></td>
+                    <td><span class="metric-badge-good">Rút ngắn 99%</span> thời gian duyệt phương án</td>
+                </tr>
+                <tr>
+                    <td><strong>Tỷ lệ đặt sai thiết bị/phụ kiện</strong><br><span style="font-size:7.5pt; color:#64748b;">광학 부품 오발주율</span></td>
+                    <td>12% – 15%<br><span style="font-size:7.5pt; color:#64748b;">Lệch MP, sai sensor, thiếu EXT</span></td>
+                    <td><strong>0%</strong><br><span style="font-size:7.5pt; color:#059669;">Khóa tương thích tự động</span></td>
+                    <td><span class="metric-badge-good">Loại bỏ 100% sai sót</span><br>Tiết kiệm hàng ngàn USD</td>
+                </tr>
+                <tr>
+                    <td><strong>Thời gian thử nghiệm Lab sơ bộ</strong><br><span style="font-size:7.5pt; color:#64748b;">조명 및 필터 사전 테스트</span></td>
+                    <td>3 – 5 ngày<br><span style="font-size:7.5pt; color:#64748b;">Cài đặt phòng Lab vật lý</span></td>
+                    <td><strong>5 giây</strong><br><span style="font-size:7.5pt; color:#059669;">Giả lập ánh sáng & lọc màu</span></td>
+                    <td><span class="metric-badge-good">Giảm 99.9% thời gian</span> kiểm chứng sơ bộ</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MỤC 7, 8, 9 -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">7</span>
+                <span>Rủi ro & Giải pháp Bảo mật</span>
+                <span class="kr-label">/ 리스크 / 보안</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <ul>
+                <li><strong>Offline-First & Bảo mật dữ liệu:</strong> Ứng dụng chạy độc lập trong mạng nội bộ, không gửi dữ liệu ra ngoài, đảm bảo an toàn 100% hình ảnh sản phẩm và bản vẽ của khách hàng.</li>
+                <li><strong>Session Security:</strong> Tự động đưa về trạng thái chưa đăng nhập khi mở lại app, yêu cầu phân quyền để chỉnh sửa hoặc truy cập tính năng nhạy cảm.</li>
+                <li><strong>Sao lưu 1-click:</strong> Tính năng Export/Import JSON giúp sao lưu và phục hồi dữ liệu hệ thống tức thì.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">8</span>
+                <span>Kế hoạch Mở rộng & Nhân rộng</span>
+                <span class="kr-label">/ 확산 계획</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <ul>
+                <li><strong>Giai đoạn 1 (Ngắn hạn):</strong> Chuẩn hóa công cụ cho toàn bộ đội ngũ PM và Kỹ thuật Vision hiện trường làm tiêu chuẩn thiết kế.</li>
+                <li><strong>Giai đoạn 2 (Trung hạn):</strong> Tích hợp xuất file 3D CAD (.STEP / .OBJ) chuyển thẳng vào phần mềm cơ khí; mở rộng sang Camera 3D Laser Profiler và Line Scan.</li>
+                <li><strong>Giai đoạn 3 (Dài hạn):</strong> Áp dụng làm nền tảng tiêu chuẩn hóa toàn bộ các nhà máy và chi nhánh trong tập đoàn.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="section-number">9</span>
+                <span>Link Demo & Tài liệu Đính kèm</span>
+                <span class="kr-label">/ 첨부/데모 링크</span>
+            </div>
+        </div>
+        <div class="content-block">
+            <div class="text-vi">
+                • <strong>Web App:</strong> <code>Vision System App</code> (Local Web Application / HTML5 + Three.js)<br>
+                • <strong>Tài liệu thuyết minh:</strong> <code>BAO_CAO_CAI_TIEN_V2_HA_VAN_LUONG.pdf</code> / <code>ai_work_improvement_submission.docx</code><br>
+                • <strong>Live Demo:</strong> Trực tiếp thao tác trên ứng dụng với đầy đủ 3D Concept Simulator, EXT Tube Stacking, Hardware Recommender và Vision Lab.
+            </div>
+        </div>
+    </div>
+
+    <!-- TÓM TẮT DÀNH CHO GIÁM ĐỐC -->
+    <div class="footer-summary">
+        <h4>🎯 TÓM TẮT ĐIỂM NỔI BẬT DÀNH CHO GIÁM ĐỐC & HỘI ĐỒNG THẨM ĐỊNH</h4>
+        <p>Giải pháp mang tính đột phá khi đưa toàn bộ trạm Vision vào không gian <strong>3D tương tác thời gian thực</strong>, tự động hóa triệt để bài toán khó về <strong>EXT Tube</strong> và <strong>nguồn sáng Backlight âm</strong>. Giúp tiết kiệm hàng ngàn giờ công lao động, loại bỏ 100% sai sót đặt hàng phần cứng và nâng cao năng lực chốt dự án ngay trong cuộc họp đầu tiên với khách hàng.</p>
+    </div>
+
+</div>
+
+</body>
+</html>

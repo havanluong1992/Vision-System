@@ -10,37 +10,36 @@
 ## 📄 PHẦN 1: BẢN TẮT 1 TRANG (1-PAGE SUMMARY)
 
 ### 1. 프로젝트명 및 핵심 아이디어 / Tên Dự án & Ý tưởng Cốt lõi
-*   **솔루션명 / Tên giải pháp:** **Vision System Calculator & Recommendation Assistant**
-*   **목표 / Mục tiêu:** 머신 비전(Machine Vision) 산업용 이미지 처리 시스템 설계 시, 복잡한 광학 계산, 시뮬레이션 및 하드웨어(카메라, 렌즈, 조명) 선정 프로세스의 완전 자동화.
-    *   *Tự động hóa hoàn toàn quy trình tính toán, giả lập quang học và lựa chọn thiết bị (Camera, Lenses, Lighting) trong thiết kế hệ thống xử lý ảnh công nghiệp (Machine Vision).*
-*   **적용 기술 / Công nghệ ứng dụng:** 최적 하드웨어 자동 추천 알고리즘(Smart Matching Algorithm), 광학 연구실 환경을 모사한 디지털 이미지 처리 기술(Lighting & Mono Conversion Simulator).
-    *   *Thuật toán đề xuất phần cứng tối ưu tự động (Smart Matching Algorithm), Kỹ thuật xử lý ảnh số giả lập môi trường phòng Lab quang học (Lighting & Mono Conversion Simulator).*
+*   **솔루션명 / Tên giải pháp:** **Vision System Calculator, EXT Tube & 3D Concept Simulator**
+*   **목표 / Mục tiêu:** 머신 비전(Machine Vision) 산업용 이미지 처리 시스템 설계 시, 복잡한 광학 계산, EXT 튜브 선정, 3D 기구 컨셉 시뮬레이션 및 하드웨어(카메라, 렌즈, 조명) 선정 프로세스의 완전 자동화.
+    *   *Tự động hóa hoàn toàn quy trình tính toán quang học, tính toán vòng nối EXT Tube, mô phỏng concept 3D và lựa chọn thiết bị (Camera, Lenses, Lighting) trong thiết kế hệ thống xử lý ảnh công nghiệp (Machine Vision).*
+*   **적용 기술 / Công nghệ ứng dụng:** WebGL 3D 인터랙티브 렌더링(Three.js), 최적 하드웨어 자동 추천 알고리즘(Smart Matching Algorithm), EXT 튜브 3D 적층 기술, 가상 광학 연구실 시뮬레이터(Lighting & Mono Conversion Simulator).
+    *   *Mô phỏng 3D tương tác WebGL (Three.js), Thuật toán đề xuất phần cứng tối ưu tự động (Smart Matching Algorithm), Công nghệ tính & lắp ghép 3D EXT Tube, Phòng Lab quang học ảo (Lighting & Mono Conversion Simulator).*
 
 ### 2. 기업의 문제점 (Pain Points) / Vấn đề của Doanh nghiệp (Pain Points)
 *   **시간 낭비 / Tốn thời gian:** 엔지니어가 제조사(HIKrobot, Basler, Cognex 등)의 수백 개 기술 문서(Datasheet)를 일일이 찾아 적합한 카메라와 렌즈를 조합해야 함. 구성당 **4~8시간 소요**.
     *   *Kỹ sư phải tra cứu thủ công hàng trăm tài liệu kỹ thuật (datasheet) của các hãng (HIKrobot, Basler, Cognex) để tìm camera và ống kính phù hợp. Mỗi cấu hình mất từ **4 - 8 giờ làm việc**.*
-*   **광학 오류 리스크 / Rủi ro sai sót quang học:** 장비 간 오조합 리스크 존재 (예: 고해상도 12MP~25MP 카메라에 낮은 화소 6MP 이하 렌즈 조합, 혹은 센서 크기가 렌즈 유효 영역보다 큰 경우 등). 이는 **실제 설치 단계에서 광학 오차 유발 (전체 프로젝트의 12% 차지)**.
-    *   *Dễ ghép sai thiết bị (ví dụ: Camera độ phân giải cao 12MP-25MP đi với ống kính chất lượng thấp 6MP, hoặc kích thước cảm biến camera lớn hơn vùng khả dụng của ống kính), dẫn đến **sai lệch quang học khi lắp đặt thực tế (chiếm 12% dự án)***.
-*   **실제 테스트 비용 / Chi phí thử nghiệm thực tế:** 다양한 조명 방향(Coaxial, Darkfield, Backlight) 및 흑백 모드(Monochrome)의 매칭 확인을 위해 직접 광학 Lab실에서 샘플을 두고 수작업 테스트를 거쳐야 하므로, 고가의 테스트 장비 구매 비용이 발생하고 프로젝트 검증 기간이 **3~7일**로 연장됨.
-    *   *Việc giả lập ánh sáng (Coaxial, Darkfield, Backlight) và chế độ đơn sắc (Monochrome) phải thực hiện thủ công trong phòng Lab, tốn chi phí mua thiết bị thử nghiệm và kéo dài thời gian kiểm thử dự án từ **3 - 7 ngày**.*
+*   **광학 오류 & EXT 튜브 누락 리스크 / Rủi ro sai sót quang học & phụ kiện:** 장비 간 오조합 리스크(고화소 카메라에 저화소 렌즈, 센서 크기 초과로 인한 비네팅) 및 근접 촬영(WD 부족) 시 필요한 EXT Tube 미계산으로 인한 초점 불량. 이는 **실제 설치 단계에서 광학 오차 유발 (전체 프로젝트의 12%~15% 차지)**.
+    *   *Dễ ghép sai thiết bị (Camera độ phân giải cao đi với ống kính chất lượng thấp, kích thước cảm biến lớn hơn vùng khả dụng của ống kính gây tối góc Vignetting) hoặc quên tính vòng EXT Tube khi khoảng cách làm việc WD ngắn, dẫn đến **sai lệch quang học khi lắp đặt thực tế (chiếm 12% - 15% dự án)***.
+*   **3D 공간 및 조명 간섭 검증 불가 / Không hình dung được không gian 3D & góc đèn:** 2D 수치만으로는 카메라 높이, 백라이트/링 조명 각도, FOV nón quang học với sản phẩm thực tế có bị va chạm gá đặt cơ khí hay không. Phải mất nhiều ngày dựng CAD phức tạp.
+*   **실제 테스트 비용 / Chi phí thử nghiệm thực tế:** Phải mất từ **3 - 7 ngày** thử nghiệm thủ công trong phòng Lab vật lý để kiểm tra hướng chiếu sáng và bộ lọc tách màu ảnh.
 
 ### 3. 혁신적인 해결책 및 특징 / Giải pháp & Tính năng Đột phá
 *   **5초 이내 하드웨어 자동 추천 / Đề xuất phần cứng tự động trong 5 giây:** FOV(시야각), WD(작동 거리), Accuracy(요구 정밀도)의 3가지 변수만 입력하면 시스템이 초점 거리(Focal Length) 자동 계산 및 적합한 광학 해상도 매칭 필터링을 수행하여 **최적의 카메라 & 렌즈 TOP 2 구성을 일치도 점수(Match Score)와 함께 실시간 추천**.
     *   *Nhập 3 thông số đầu vào (FOV, Khoảng cách làm việc WD, Độ chính xác Accuracy). Hệ thống tự động tính tiêu cự, lọc độ phân giải quang học phù hợp và đưa ra **Top 2 cấu hình Camera & Lens tối ưu nhất kèm điểm tương thích (Match Score)**.*
-*   **스마트 호환성 등급 매칭 / Phân bậc tương thích thông minh:** 카메라 해상도(≤5MP, 12MP, ≥25MP, 65MP)에 따른 렌즈 필터링 및 이미지 센서 크기 자동 검증을 통해 **부품 오조합 리스크 100% 제거**.
-    *   *Hệ thống phân loại ống kính tự động (≤5MP, 12MP, ≥25MP, 65MP) và đối chiếu chính xác kích thước cảm biến vật lý giúp **loại bỏ 100% rủi ro ghép sai linh kiện**.*
-*   **가상 광학 연구실 (Vision Lab Simulator) / Phòng Lab quang học ảo (Vision Lab Simulator):** 웹 브라우저 상에서 샘플 이미지의 조명 방향(Dome, Ring, Darkfield) 및 흑백 색상 필터(RGB, HSI, 강도) 변환 시뮬레이션을 즉시 수행하여 오프라인 1차 Lab 테스트 단계 완전 대체.
-    *   *Giả lập tức thì các hướng chiếu sáng và bộ lọc đơn sắc (RGB, HSI, Intensity) trên ảnh mẫu ngay trên Web, thay thế cho bước thử nghiệm Lab sơ bộ.*
-*   **스마트 관리자 패널 (Admin Panel) / Quản trị thông minh (Admin Panel):** 관리자(Admin) 권한을 통해 신규 장비 추가/삭제뿐만 아니라 사양 정보 직접 수정 지원 및 단 1번의 클릭으로 시스템 데이터베이스(JSON) 백업/복원 기능 제공.
-    *   *Cấp quyền Admin để cập nhật nhanh, nhập/xuất cơ sở dữ liệu hệ thống (JSON) chỉ với 1 click.*
+*   **EXT 튜브 자동 계산 및 3D 적층 시뮬레이션 / Tính toán & Lắp ghép 3D vòng nối EXT Tube:** WD và 배율에 따라 필요한 EXT Tube 링 두께(0.5mm~40mm)를 즉시 계산하고, 3D 뷰어 상에 카메라-렌즈 사이에 실시간 체결 렌더링.
+    *   *Tự động tính chính xác độ dày vòng đệm EXT Tube (0.5mm, 1mm, 2mm, 5mm, 10mm, 20mm, 40mm) và hiển thị lắp ghép 3D trực tiếp giữa Camera và Lens trong không gian 3 chiều.*
+*   **실시간 3D 인터랙티브 컨셉 시뮬레이터 / Mô phỏng Concept 3D tương tác thời gian thực:** WebGL 기반으로 카메라, 렌즈, EXT 튜브, 조명(Backlight với LWD âm/dương, Ring, Bar), 제품 높이 연동 동적 FOV 콘(Dynamic FOV Cone)을 360° 자유롭게 회전·확대하여 사전 간섭 검증.
+    *   *Trực quan hóa toàn bộ trạm Vision 3D gồm Camera, Lens, EXT Tube, Đèn chiếu sáng và Phôi sản phẩm; vùng nón FOV tự động co giãn bám theo độ cao nâng/hạ của phôi.*
+*   **가상 광학 연구실 (Vision Lab Simulator) / Phòng Lab quang học ảo:** Giả lập tức thì các hướng chiếu sáng (Dome, Ring, Darkfield, Backlight) và bộ lọc đơn sắc (RGB, HSI) trên ảnh mẫu ngay trên Web.
+*   **스마트 관리자 패널 & 세션 보안 (Admin & Security):** Cấp quyền Admin cập nhật nhanh 100+ thiết bị, nhập/xuất JSON 1-click và bảo mật phiên đăng nhập tự động.
 
 ### 4. 정량적 성과 및 비즈니스 가치 / Kết quả Đo lường & Giá trị Doanh nghiệp
 *   **설계 시간 단축 / Thời gian thiết kế cấu hình:** 기존 **6시간**에서 **5분 미만**으로 감소 (**98.6% 업무 효율성 증가**).
-    *   *Giảm từ **6 giờ** xuống còn **dưới 5 phút** (Hiệu suất tăng **98.6%**).*
-*   **하드웨어 발주 오류율 / Tỷ lệ sai sót đặt hàng phần cứng:** 기존 **12%**에서 **0%**로 감소.
-    *   *Giảm từ **12%** về **0%**.*
-*   **사전 테스트 비용 절감 / Chi phí thử nghiệm sơ bộ:** 타당성 검토(Feasibility study) 단계에서 발생하던 **오프라인 물리적 Lab 구축 비용 100% 절감**.
-    *   *Tiết kiệm **100% chi phí phòng Lab vật lý** trong giai đoạn tiền khả thi (Feasibility study).*
+*   **하드웨어 발주 오류율 / Tỷ lệ sai sót đặt hàng phần cứng:** 기존 **12%~15%**에서 **0%**로 감소 (완벽 차단).
+*   **3D 컨셉 검증 시간 / Thời gian duyệt Concept 3D:** 기존 **1~2일** CAD 작업에서 **10초** 3D 즉시 시뮬레이션으로 단축.
+*   **사전 테스트 비용 절감 / Chi phí thử nghiệm sơ bộ:** Tiết kiệm **100% chi phí phòng Lab vật lý** trong giai đoạn tiền khả thi.
+
 
 ---
 
