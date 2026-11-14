@@ -3212,6 +3212,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let scene3D, camera3D, renderer3D, controls3D, transformControls3D = null;
     let components3DGroup = null;
     let activeLightGroup3D = null;
+    let activeLightGroup2_3D = null;     // 2nd (lower) light when dual-light mode is on
+    let baseLight2PosY = 0;
     let activeWorkGroup3D = null;
     let activeCamAssemblyGroup3D = null;
     let activeFovGroup3D = null;         // FOV optical cone group — rebuilt when workpiece moves
@@ -3247,6 +3249,10 @@ document.addEventListener('DOMContentLoaded', () => {
         pixelSize: 0.025,
         lightType: 'ring',
         lightColor: 'white',
+        lightCount: 1,          // 1 or 2 lights
+        light2Type: 'bar',      // type of 2nd light (lower)
+        light2Color: 'white',
+        lightGap: 45,           // vertical distance between light 1 (upper) and light 2 (lower), mm
         workpiece: 'pcb',
         showFov: true,
         showDims: true
@@ -3357,6 +3363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const checkTargets = [];
             if (activeWorkGroup3D) checkTargets.push(activeWorkGroup3D);
             if (activeLightGroup3D) checkTargets.push(activeLightGroup3D);
+            if (activeLightGroup2_3D) checkTargets.push(activeLightGroup2_3D);
             if (activeCamAssemblyGroup3D) checkTargets.push(activeCamAssemblyGroup3D);
 
             const intersects = raycaster.intersectObjects(checkTargets, true);
@@ -3365,7 +3372,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (isChildOfObject(hitObj, activeWorkGroup3D)) {
                     select3DTransformTarget(activeWorkGroup3D, 'Workpiece / Product Specimen');
                 } else if (isChildOfObject(hitObj, activeLightGroup3D)) {
-                    select3DTransformTarget(activeLightGroup3D, 'Lighting Assembly');
+                    select3DTransformTarget(activeLightGroup3D, light1Label());
+                } else if (activeLightGroup2_3D && isChildOfObject(hitObj, activeLightGroup2_3D)) {
+                    select3DTransformTarget(activeLightGroup2_3D, 'Light 2 – Lower');
                 } else if (isChildOfObject(hitObj, activeCamAssemblyGroup3D)) {
                     select3DTransformTarget(activeCamAssemblyGroup3D, 'Camera & Lens Assembly');
                 }
@@ -3756,6 +3765,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
+    function light1Label() {
+        return current3DConfig.lightCount === 2 ? 'Light 1 – Upper' : 'Lighting Assembly';
+    }
+
     function select3DTransformTarget(targetGroup, nameLabel) {
         if (!targetGroup) return;
         activeTransformTarget = targetGroup;
@@ -3770,6 +3783,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectTargetObj) {
             if (targetGroup === activeWorkGroup3D) selectTargetObj.value = 'workpiece';
             else if (targetGroup === activeLightGroup3D) selectTargetObj.value = 'light';
+            else if (targetGroup === activeLightGroup2_3D) selectTargetObj.value = 'light2';
             else if (targetGroup === activeCamAssemblyGroup3D) selectTargetObj.value = 'camera';
         }
     }
@@ -3829,7 +3843,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (val === 'workpiece' && activeWorkGroup3D) {
                     select3DTransformTarget(activeWorkGroup3D, 'Workpiece / Product Specimen');
                 } else if (val === 'light' && activeLightGroup3D) {
-                    select3DTransformTarget(activeLightGroup3D, 'Lighting Assembly');
+                    select3DTransformTarget(activeLightGroup3D, light1Label());
+                } else if (val === 'light2' && activeLightGroup2_3D) {
+                    select3DTransformTarget(activeLightGroup2_3D, 'Light 2 – Lower');
                 } else if (val === 'camera' && activeCamAssemblyGroup3D) {
                     select3DTransformTarget(activeCamAssemblyGroup3D, 'Camera & Lens Assembly');
                 }
@@ -3898,6 +3914,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let baseY = baseLightPosY;
         if (target === activeWorkGroup3D) baseY = baseWorkGroupPosY;
         else if (target === activeCamAssemblyGroup3D) baseY = baseCamAssemblyPosYVal;
+        else if (target === activeLightGroup2_3D) baseY = baseLight2PosY;
 
         target.position.set(dx, baseY + dy, dz);
         target.rotation.y = (rot * Math.PI) / 180;
@@ -3910,6 +3927,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (activeLightGroup3D && typeof baseLightPosY !== 'undefined') {
                 activeLightGroup3D.position.y = baseLightPosY + curWorkY;
+            }
+            if (activeLightGroup2_3D) {
+                activeLightGroup2_3D.position.y = baseLight2PosY + curWorkY;
             }
         }
 
@@ -3936,6 +3956,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let baseY = baseLightPosY;
         if (target === activeWorkGroup3D) baseY = baseWorkGroupPosY;
         else if (target === activeCamAssemblyGroup3D) baseY = baseCamAssemblyPosYVal;
+        else if (target === activeLightGroup2_3D) baseY = baseLight2PosY;
 
         const dy = Math.round(target.position.y - baseY);
         const dx = Math.round(target.position.x);
@@ -3981,7 +4002,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sRot) sRot.value = 0;
         if (sScale) sScale.value = 100;
 
-        if (activeLightGroup3D) {
+        if (activeTransformTarget && activeTransformTarget === activeLightGroup2_3D) {
+            activeLightGroup2_3D.position.set(0, baseLight2PosY, 0);
+            activeLightGroup2_3D.rotation.set(0, 0, 0);
+            activeLightGroup2_3D.scale.set(1, 1, 1);
+        } else if (activeLightGroup3D) {
             activeLightGroup3D.position.set(0, baseLightPosY, 0);
             activeLightGroup3D.rotation.set(0, 0, 0);
             activeLightGroup3D.scale.set(1, 1, 1);
@@ -4132,6 +4157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         activeLightGroup3D = null;
+        activeLightGroup2_3D = null;
         activeWorkGroup3D = null;
         activeCamAssemblyGroup3D = null;
 
@@ -4334,8 +4360,9 @@ document.addEventListener('DOMContentLoaded', () => {
         baseCamAssemblyPosYVal = baseCamAssemblyPosY;
 
         // ==================== 4. LIGHTING UNIT ====================
+        // Factory: builds one light unit of the given type/color (used for Light 1 and Light 2)
+        const buildLightUnit = (lightType, lightColorHex) => {
         const lightGroup = new THREE.Group();
-        const lightType = cfg.lightType || 'ring';
 
         if (lightType === 'ring') {
             // Detailed Angle Ring Light Model RLAD Series (RLAD-090050A30, RLAD-120050A30, etc.)
@@ -5130,14 +5157,36 @@ document.addEventListener('DOMContentLoaded', () => {
             lightGroup.add(squareLight);
         }
 
-        components3DGroup.add(lightGroup);
+        return lightGroup;
+        };   // end buildLightUnit
 
+        const isDualLight = cfg.lightCount === 2;
+        const light1Type = cfg.lightType || 'ring';
+        const lightGroup = buildLightUnit(light1Type, lightColorHex);
+        let lightGroup2 = null;
+        if (isDualLight) {
+            const light2Type = cfg.light2Type || 'bar';
+            lightGroup2 = buildLightUnit(light2Type, getLightColorHex(cfg.light2Color || 'white'));
+            // Stack Light 2 BELOW Light 1 by the chosen gap (backlight keeps its own position under the stage)
+            if (light1Type !== 'backlight' && light2Type !== 'backlight') {
+                const gap = Math.max(10, cfg.lightGap || 45);
+                lightGroup2.position.y = Math.max(12, lightGroup.position.y - gap);
+            }
+        }
+
+        components3DGroup.add(lightGroup);
         activeLightGroup3D = lightGroup;
         baseLightPosY = lightGroup.position.y;
+        if (lightGroup2) {
+            components3DGroup.add(lightGroup2);
+            activeLightGroup2_3D = lightGroup2;
+            baseLight2PosY = lightGroup2.position.y;
+        }
         if (transformControls3D) {
             transformControls3D.attach(lightGroup);
         }
         resetLightSliders();
+        syncDualLightUI();
 
         // ==================== 5. FOV OPTICAL CONE ====================
         if (cfg.showFov !== false) {
@@ -5273,16 +5322,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // LWD: from the real light bottom Y position.
         // baseLightPosY = lightGroup.position.y (world). Light half-heights per type:
-        const lightType2 = cfg.lightType || 'ring';
-        let lightHalfH = 13; // default ring light half-height
-        if (lightType2 === 'ring') lightHalfH = 13;  // ringH=26
-        else if (lightType2 === 'ring-flat') lightHalfH = 8;
-        else if (lightType2 === 'coaxial') lightHalfH = 12;
-        else if (lightType2 === 'dome') lightHalfH = 30;
-        else if (lightType2 === 'backlight') lightHalfH = 5;
-        else if (lightType2 === 'bar') lightHalfH = 10;
-        else if (lightType2 === 'square-bar') lightHalfH = 10;
-        const lightBottomY = baseLightPosY - lightHalfH;
+        const halfHOf = (t) => ({ 'ring': 13, 'ring-flat': 8, 'coaxial': 12, 'dome': 30, 'backlight': 5, 'bar': 10, 'square-bar': 10 }[t] || 13);
+        let lightBottomY = baseLightPosY - halfHOf(cfg.lightType || 'ring');
+        // Dual-light: LWD is measured from the lowest (front-most) light
+        if (activeLightGroup2_3D) {
+            lightBottomY = Math.min(lightBottomY, baseLight2PosY - halfHOf(cfg.light2Type || 'bar'));
+        }
         const initProdY = activeWorkGroup3D ? activeWorkGroup3D.position.y : 0;
         dimAnnotationLWD = Math.max(initProdY + 0.5, lightBottomY);
 
@@ -5628,6 +5673,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetToInitialState() {
         // 1. Restore config to the snapshot saved at open time (falls back to current if not saved)
         const cfg = initialOpen3DConfig ? JSON.parse(JSON.stringify(initialOpen3DConfig)) : JSON.parse(JSON.stringify(current3DConfig));
+        if (initialOpen3DConfig) {
+            // Dual-light settings fall back to defaults (single light) unless the opener supplied them
+            if (cfg.lightCount === undefined) cfg.lightCount = 1;
+            if (cfg.light2Type === undefined) cfg.light2Type = 'bar';
+            if (cfg.light2Color === undefined) cfg.light2Color = 'white';
+            if (cfg.lightGap === undefined) cfg.lightGap = 45;
+        }
 
         // 2. Reset all dimension annotation overrides so they auto-recalculate from cfg
         dimAnnotWDTopY = 0;
@@ -5677,6 +5729,83 @@ document.addEventListener('DOMContentLoaded', () => {
         presetBtnsAll.forEach(b => b.classList.remove('active'));
         const isoBtn = document.querySelector('.preset-btn[data-view="isometric"]');
         if (isoBtn) isoBtn.classList.add('active');
+    }
+
+    // ===== DUAL LIGHT (UPPER / LOWER) UI =====
+    const select3DLightCount = document.getElementById('select-3d-light-count');
+    const select3DLight2Type = document.getElementById('select-3d-light2-type');
+    const select3DLight2Color = document.getElementById('select-3d-light2-color');
+    const slider3DLightGap = document.getElementById('slider-3d-light-gap');
+    const btn3DSwapLights = document.getElementById('btn-3d-swap-lights');
+
+    function syncDualLightUI() {
+        const dual = current3DConfig.lightCount === 2;
+        const panel = document.getElementById('dual-light-options');
+        if (panel) panel.style.display = dual ? 'block' : 'none';
+        if (select3DLightCount) select3DLightCount.value = dual ? '2' : '1';
+        if (select3DLight2Type) select3DLight2Type.value = current3DConfig.light2Type || 'bar';
+        if (select3DLight2Color) select3DLight2Color.value = current3DConfig.light2Color || 'white';
+        if (slider3DLightGap) slider3DLightGap.value = current3DConfig.lightGap || 45;
+        const lblGap = document.getElementById('lbl-3d-light-gap');
+        if (lblGap) lblGap.textContent = (current3DConfig.lightGap || 45) + ' mm';
+        const lbl1 = document.getElementById('lbl-light1-type');
+        if (lbl1) lbl1.textContent = dual ? 'Light 1 Type (Upper)' : 'Light Source Type';
+        const opt2 = document.querySelector('#select-3d-target-obj option[value="light2"]');
+        if (opt2) { opt2.hidden = !dual; opt2.disabled = !dual; }
+        const opt1 = document.querySelector('#select-3d-target-obj option[value="light"]');
+        if (opt1) opt1.textContent = dual ? 'Light 1 – Upper' : 'Lighting Assembly';
+        const hudInfo = document.getElementById('modal-3d-subtitle');
+        if (hudInfo) hudInfo.textContent = dual
+            ? 'Interactive 3D Rig: Camera + Lens + Extension Ring + 2 Lights (Upper / Lower) + FOV Cone'
+            : 'Interactive 3D Rig: Camera + Lens + Extension Ring + Light + FOV Cone';
+    }
+
+    if (select3DLightCount) {
+        select3DLightCount.addEventListener('change', () => {
+            current3DConfig.lightCount = parseInt(select3DLightCount.value, 10) === 2 ? 2 : 1;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+    if (select3DLight2Type) {
+        select3DLight2Type.addEventListener('change', () => {
+            current3DConfig.light2Type = select3DLight2Type.value;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+    if (select3DLight2Color) {
+        select3DLight2Color.addEventListener('change', () => {
+            current3DConfig.light2Color = select3DLight2Color.value;
+            build3DVisionSystem(current3DConfig);
+        });
+    }
+    if (slider3DLightGap) {
+        slider3DLightGap.addEventListener('input', () => {
+            current3DConfig.lightGap = parseInt(slider3DLightGap.value, 10) || 45;
+            const lblGap = document.getElementById('lbl-3d-light-gap');
+            if (lblGap) lblGap.textContent = current3DConfig.lightGap + ' mm';
+            // Live update: move only the lower light, keep the upper one where it is
+            if (activeLightGroup2_3D && activeLightGroup3D) {
+                const curWorkY = activeWorkGroup3D ? activeWorkGroup3D.position.y : 0;
+                const newY = Math.max(12, activeLightGroup3D.position.y - curWorkY - current3DConfig.lightGap);
+                baseLight2PosY = newY;
+                activeLightGroup2_3D.position.y = newY + curWorkY;
+                if (activeTransformTarget === activeLightGroup2_3D) syncLightSlidersFrom3D();
+                if (showWdLwdAnnotation) drawDimensionAnnotations(current3DConfig);
+            }
+        });
+    }
+    if (btn3DSwapLights) {
+        btn3DSwapLights.addEventListener('click', () => {
+            // Swap upper <-> lower light (type + color)
+            const t = current3DConfig.lightType, c = current3DConfig.lightColor;
+            current3DConfig.lightType = current3DConfig.light2Type || 'bar';
+            current3DConfig.lightColor = current3DConfig.light2Color || 'white';
+            current3DConfig.light2Type = t;
+            current3DConfig.light2Color = c;
+            if (select3DLightType) select3DLightType.value = current3DConfig.lightType;
+            if (select3DLightColor) select3DLightColor.value = current3DConfig.lightColor;
+            build3DVisionSystem(current3DConfig);
+        });
     }
 
     // Customization Selectors
